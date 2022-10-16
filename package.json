@@ -1,0 +1,25 @@
+{
+  "name": "fox-contract",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FOX-Finance/FOX-contract.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/FOX-Finance/FOX-contract/issues"
+  },
+  "homepage": "https://github.com/FOX-Finance/FOX-contract#readme",
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.7.3",
+    "hardhat": "^2.12.0",
+    "solc": "^0.8.9",
+    "solidity-docgen": "^0.6.0-beta.29"
+  }
+}
