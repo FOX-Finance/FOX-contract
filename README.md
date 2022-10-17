@@ -8,11 +8,17 @@ DAI + FRAX = FOX
 
 ## Trust & Decentralization
 
+TBD
+
 ## FOXS
+
+TBD
 
 # Mechanism
 
 ## Minting
+
+- Only CDP Owner
 
 ```
                     MAX LTV: L%
@@ -28,6 +34,8 @@ DAI + FRAX = FOX
 ```
 
 ## Redeeming
+
+- Only CDP Owner
 
 ```
                     MAX LTV: L%
@@ -46,6 +54,8 @@ DAI + FRAX = FOX
 
 ### Borrowing Debt
 
+- Only CDP Owner
+
 ```
                     MAX LTV: L%
 +------------+          LTV: x++%    +------------+
@@ -60,6 +70,8 @@ DAI + FRAX = FOX
 ```
 
 ### Depositing Collateral
+
+- Anyone
 
 ```
                     MAX LTV: L%
@@ -78,6 +90,8 @@ DAI + FRAX = FOX
 
 ### Repaying Debt
 
+- Anyone
+
 ```
                     MAX LTV: L%
 +------------+          LTV: x--%    +------------+
@@ -92,6 +106,8 @@ DAI + FRAX = FOX
 ```
 
 ### Withdraw Collateral
+
+- Only CDP Owner
 
 ```
                     MAX LTV: L%
@@ -108,6 +124,8 @@ DAI + FRAX = FOX
 
 ### Coupon (NFT)
 
+- Anyone
+
 ```
 
                         LTV: -- 
@@ -123,9 +141,15 @@ DAI + FRAX = FOX
 
 ## Liquidation
 
-TBD
+- Anyone
 
 ## Global Liquidation
+
+- Governance
+
+---
+
+# AMO
 
 TBD
 
