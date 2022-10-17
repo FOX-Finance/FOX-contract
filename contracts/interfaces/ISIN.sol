@@ -3,6 +3,6 @@
 pragma solidity 0.8.9;
 
 interface ISIN {
-    function mint(address account, uint256 amount_) external; // only CDP
-    function burn(address account, uint256 amount_) external; // only CDP
+    function mintTo(address account, uint256 amount) external;
+    function burnFrom(address account, uint256 amount) external;
 }

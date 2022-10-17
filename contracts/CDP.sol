@@ -352,7 +352,7 @@ abstract contract FoxCDP is
         );
 
         _cdp.debt += amount_;
-        ISIN(address(debtToken)).mint(account_, amount_);
+        ISIN(address(debtToken)).mintTo(account_, amount_);
 
         require(isSafe(id_), "FoxCDP::_borrow: CDP operation exceeds max LTV.");
         require(
@@ -377,7 +377,7 @@ abstract contract FoxCDP is
         } else if (_cdp.fee != 0) {
             debtToken.safeTransferFrom(account_, feeTo, _cdp.fee);
             _cdp.debt -= (amount_ - _cdp.fee);
-            ISIN(address(debtToken)).burn(account_, amount_ - _cdp.fee);
+            ISIN(address(debtToken)).burnFrom(account_, amount_ - _cdp.fee);
             _cdp.fee = 0;
         }
 
