@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -12,15 +12,14 @@ import "./interfaces/ISIN.sol";
 // import "./interfaces/IWETH.sol";
 
 /**
- * @title FoxCDP
+ * @title Collateralized Debt Position in FOX Finance.
+ * @author Luke Park (lukepark327@gmail.com)
  * @notice Gets WETH as collateral, gives SIN as debt.
  * Also it is treasury of collaterals and SINs.
  * @dev Abstract contract.
- * @author Luke Park (lukepark327@gmail.com)
- * @notice Collateralized Debt Position in FOX Finance.
  */
 abstract contract FoxCDP is
-    ERC721("FOX Collateralized Debt Position", "FoxCDP"),
+    ERC721("Fox Collateralized Debt Position", "FoxCDP"),
     Pausable
 {
     using SafeERC20 for IERC20;
@@ -282,7 +281,7 @@ abstract contract FoxCDP is
         );
 
         if (_cdp.debt != 0) {
-            _repay(account_, id_, _cdp.debt);
+            _repay(account_, id_, _cdp.debt + _cdp.fee);
         }
         if (_cdp.collateral != 0) {
             _withdraw(account_, id_, _cdp.collateral);
