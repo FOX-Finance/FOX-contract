@@ -374,9 +374,9 @@ abstract contract FoxCDP is
         if (_cdp.fee >= amount_) {
             // repay fee first
             _cdp.fee -= amount_;
-            debtToken.safeTransferFrom(account_, address(this), amount_);
+            debtToken.safeTransferFrom(account_, feeTo, amount_);
         } else if (_cdp.fee != 0) {
-            debtToken.safeTransferFrom(account_, address(this), _cdp.fee);
+            debtToken.safeTransferFrom(account_, feeTo, _cdp.fee);
             _cdp.debt -= (amount_ - _cdp.fee);
             ISIN(address(debtToken)).burn(account_, amount_ - _cdp.fee);
             _cdp.fee = 0;
