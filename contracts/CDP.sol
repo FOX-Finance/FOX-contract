@@ -18,8 +18,8 @@ import "./interfaces/ISIN.sol";
  * Also it is treasury of collaterals and SINs.
  * @dev Abstract contract.
  */
-abstract contract FoxCDP is
-    ERC721("Fox Collateralized Debt Position", "FoxCDP"),
+abstract contract SinCDP is
+    ERC721("Fox Collateralized Debt Position", "SinCDP"),
     Pausable
 {
     using SafeERC20 for IERC20;
@@ -88,7 +88,7 @@ abstract contract FoxCDP is
     modifier onlyFactory() {
         require(
             msg.sender == factory,
-            "FoxCDP::onlyFactory: Sender must be factory."
+            "SinCDP::onlyFactory: Sender must be factory."
         );
         _;
     }
@@ -96,7 +96,7 @@ abstract contract FoxCDP is
     modifier nonzeroAddress(address account_) {
         require(
             account_ != address(0),
-            "FoxCDP::nonzeroAddress: Account must be nonzero."
+            "SinCDP::nonzeroAddress: Account must be nonzero."
         );
         _;
     }
@@ -277,7 +277,7 @@ abstract contract FoxCDP is
 
         require(
             _isApprovedOrOwner(account_, id_),
-            "FoxCDP::_close: Not a valid caller."
+            "SinCDP::_close: Not a valid caller."
         );
 
         if (_cdp.debt != 0) {
@@ -306,7 +306,7 @@ abstract contract FoxCDP is
 
         require(
             _cdp.collateral >= minimumCollateral,
-            "FoxCDP::_deposit: Not enough collateral."
+            "SinCDP::_deposit: Not enough collateral."
         );
 
         emit Deposit(account_, id_, amount_);
@@ -321,7 +321,7 @@ abstract contract FoxCDP is
 
         require(
             _isApprovedOrOwner(account_, id_),
-            "FoxCDP::_withdraw: Not a valid caller."
+            "SinCDP::_withdraw: Not a valid caller."
         );
 
         _cdp.collateral -= amount_;
@@ -329,11 +329,11 @@ abstract contract FoxCDP is
 
         require(
             isSafe(id_),
-            "FoxCDP::_withdraw: CDP operation exceeds max LTV."
+            "SinCDP::_withdraw: CDP operation exceeds max LTV."
         );
         require(
             _cdp.collateral == 0 || _cdp.collateral >= minimumCollateral,
-            "FoxCDP::_withdraw: Not enough collateral."
+            "SinCDP::_withdraw: Not enough collateral."
         );
 
         emit Withdraw(account_, id_, amount_);
@@ -348,16 +348,16 @@ abstract contract FoxCDP is
 
         require(
             _isApprovedOrOwner(account_, id_),
-            "FoxCDP::_borrow: Not a valid caller."
+            "SinCDP::_borrow: Not a valid caller."
         );
 
         _cdp.debt += amount_;
         ISIN(address(debtToken)).mintTo(account_, amount_);
 
-        require(isSafe(id_), "FoxCDP::_borrow: CDP operation exceeds max LTV.");
+        require(isSafe(id_), "SinCDP::_borrow: CDP operation exceeds max LTV.");
         require(
             debtToken.totalSupply() <= cap,
-            "FoxCDP::_borrow: Cannot borrow SIN anymore."
+            "SinCDP::_borrow: Cannot borrow SIN anymore."
         );
 
         emit Borrow(account_, id_, amount_);
