@@ -56,8 +56,12 @@ contract FOXS is ERC20Capped, Ownable {
     uint256 private constant ACC_TOKEN_PRECISION = 1e12;
 
     constructor() ERC20Capped(1_000_000_000 * 1e18) ERC20("FOX Share", "FOXS") {
-        // _mint(_msgSender(), 1_000_000_000 * 1e18);
+        // _mint(_msgSender(), 1_000_000_000 * 1e18); // TODO
     }
+
+    // TODO: function mint() external public {}
+
+    // TODO: function burn() external public {}
 
     //============ MasterChef ============//
 

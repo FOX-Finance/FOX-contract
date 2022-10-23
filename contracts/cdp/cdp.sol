@@ -6,27 +6,27 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "./interfaces/ISIN.sol";
+import "../interfaces/ISIN.sol";
 
 // import "./interfaces/IWETH.sol";
 
 /**
- * @title Collateralized Debt Position in FOX Finance.
+ * @title Collateralized Debt Position.
  * @author Luke Park (lukepark327@gmail.com)
  * @notice Gets WETH as collateral, gives SIN as debt.
- * Also it is treasury of collaterals and SINs.
  * @dev Abstract contract.
  */
 abstract contract SinCDP is
-    ERC721("Fox Collateralized Debt Position", "SinCDP"),
-    Pausable
+    ERC721("Collateralized Debt Position", "SinCDP"),
+    Pausable,
+    Ownable
 {
     using SafeERC20 for IERC20;
 
     //============ Params ============//
 
-    address public immutable factory;
     address public immutable feeTo;
     IERC20 public immutable collateralToken;
     IERC20 public immutable debtToken;
@@ -42,23 +42,13 @@ abstract contract SinCDP is
     struct CDP {
         uint256 collateral;
         uint256 debt;
-        uint256 fee;
+        uint256 fee; // as SIN
         uint256 latestUpdate;
     }
     mapping(uint256 => CDP) public cdps;
     uint256 public id;
 
     //============ Events ============//
-
-    event Initialize(
-        address factory,
-        address feeTo,
-        address indexed collateralToken,
-        address indexed debtToken,
-        uint256 maxLTV,
-        uint256 feeRatio,
-        uint256 cap
-    );
 
     event Open(address indexed account_, uint256 indexed id_);
     event Close(address indexed account_, uint256 indexed id_);
@@ -85,14 +75,6 @@ abstract contract SinCDP is
 
     //============ Modifiers ============//
 
-    modifier onlyFactory() {
-        require(
-            msg.sender == factory,
-            "SinCDP::onlyFactory: Sender must be factory."
-        );
-        _;
-    }
-
     modifier nonzeroAddress(address account_) {
         require(
             account_ != address(0),
@@ -115,7 +97,6 @@ abstract contract SinCDP is
         nonzeroAddress(collateralToken_)
         nonzeroAddress(debtToken_)
     {
-        factory = msg.sender;
         feeTo = feeTo_; // can be zero address
         collateralToken = IERC20(collateralToken_);
         debtToken = IERC20(debtToken_);
@@ -123,16 +104,6 @@ abstract contract SinCDP is
         maxLTV = maxLTV_;
         feeRatio = feeRatio_;
         cap = cap_;
-
-        emit Initialize(
-            msg.sender,
-            feeTo_,
-            collateralToken_,
-            debtToken_,
-            maxLTV_,
-            feeRatio,
-            cap_
-        );
     }
 
     //============ Pausable ============//
@@ -144,7 +115,7 @@ abstract contract SinCDP is
      *
      * - The contract must not be paused.
      */
-    function pause() public onlyFactory {
+    function pause() public onlyOwner {
         _pause();
     }
 
@@ -155,7 +126,7 @@ abstract contract SinCDP is
      *
      * - The contract must be paused.
      */
-    function unpause() public onlyFactory {
+    function unpause() public onlyOwner {
         _unpause();
     }
 
@@ -185,8 +156,8 @@ abstract contract SinCDP is
     /**
      * @notice Opens a CDP position.
      */
-    function open() external whenNotPaused returns (uint256 id_) {
-        id_ = _open(msg.sender);
+    function open() external virtual whenNotPaused returns (uint256 id_) {
+        id_ = _open(_msgSender());
         _update(id_);
     }
 
@@ -200,20 +171,23 @@ abstract contract SinCDP is
      */
     function openAndDeposit(uint256 amount_)
         external
+        virtual
         whenNotPaused
         returns (uint256 id_)
     {
-        id_ = _open(msg.sender);
-        _deposit(msg.sender, id_, amount_);
+        id_ = _open(_msgSender());
+        _deposit(_msgSender(), id_, amount_);
         _update(id_);
     }
+
+    // TODO: openAndDepositAndBorrow
 
     /**
      * @notice Closes the `id_` CDP position.
      */
-    function close(uint256 id_) external whenNotPaused {
+    function close(uint256 id_) external virtual whenNotPaused {
         _update(id_);
-        _close(msg.sender, id_);
+        _close(_msgSender(), id_);
     }
 
     /**
@@ -223,41 +197,67 @@ abstract contract SinCDP is
      *
      * - Do `approve` first.
      */
-    function deposit(uint256 id_, uint256 amount_) external whenNotPaused {
-        _deposit(msg.sender, id_, amount_);
+    function deposit(uint256 id_, uint256 amount_)
+        external
+        virtual
+        whenNotPaused
+    {
+        _deposit(_msgSender(), id_, amount_);
         _update(id_);
     }
 
+    // TODO: depositAndBorrow
+
     /**
-     * @notice Withdraws collateral from `this` to `msg.sender`.
+     * @notice Withdraws collateral from `this` to `_msgSender()`.
      */
-    function withdraw(uint256 id_, uint256 amount_) external whenNotPaused {
+    function withdraw(uint256 id_, uint256 amount_)
+        external
+        virtual
+        whenNotPaused
+    {
         _update(id_);
-        _withdraw(msg.sender, id_, amount_);
+        _withdraw(_msgSender(), id_, amount_);
     }
 
     /**
      * @notice Borrows `amount_` debts.
      */
-    function borrow(uint256 id_, uint256 amount_) external whenNotPaused {
+    function borrow(uint256 id_, uint256 amount_)
+        external
+        virtual
+        whenNotPaused
+    {
         _update(id_);
-        _borrow(msg.sender, id_, amount_);
+        _borrow(_msgSender(), id_, amount_);
     }
 
     /**
      * @notice Repays `amount_` debts.
      */
-    function repay(uint256 id_, uint256 amount_) external whenNotPaused {
+    function repay(uint256 id_, uint256 amount_)
+        external
+        virtual
+        whenNotPaused
+    {
         _update(id_);
-        _repay(msg.sender, id_, amount_);
+        _repay(_msgSender(), id_, amount_);
     }
 
     /**
      * @notice Update fee.
      */
-    function updateFee(uint256 id_) external returns (uint256 additionalFee) {
+    function updateFee(uint256 id_)
+        external
+        virtual
+        returns (uint256 additionalFee)
+    {
         return _update(id_);
     }
+
+    // TODO: liquidation (based on `isSafe()`)
+
+    // TODO: global liquidation (onlyOwner)
 
     //============ Internal Functions ============//
 
@@ -343,7 +343,7 @@ abstract contract SinCDP is
         address account_,
         uint256 id_,
         uint256 amount_
-    ) internal {
+    ) internal virtual {
         CDP storage _cdp = cdps[id_];
 
         require(
@@ -367,11 +367,11 @@ abstract contract SinCDP is
         address account_,
         uint256 id_,
         uint256 amount_
-    ) internal {
+    ) internal virtual {
         CDP storage _cdp = cdps[id_];
 
+        // repay fee first
         if (_cdp.fee >= amount_) {
-            // repay fee first
             _cdp.fee -= amount_;
             debtToken.safeTransferFrom(account_, feeTo, amount_);
         } else if (_cdp.fee != 0) {

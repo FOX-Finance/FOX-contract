@@ -5,10 +5,10 @@ pragma solidity 0.8.9;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "./interfaces/ISIN.sol";
+import "../interfaces/ISIN.sol";
 
 /**
- * @title Stable INtermidiate coin (SIN)
+ * @title Stable INtermidiate-coin (SIN)
  * @author Luke Park (lukepark327@gmail.com)
  * @dev Uses internally to represent debt.
  */
