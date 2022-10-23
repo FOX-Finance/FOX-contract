@@ -182,3 +182,11 @@ $ npx hardhat run scripts/deploy.js
 ### 3. Test (Optional)
 
 TBD
+
+---
+
+# TODO
+
+-[] BNB liquid staking -> stBNB as collateral
+-[] LP as collateral
+-[] solidity-docgen
