@@ -58,7 +58,7 @@ contract Timelock is Ownable {
 
     function setDelay(uint256 delay_) public {
         require(
-            msg.sender == address(this),
+            _msgSender() == address(this),
             "Timelock::setDelay: Call must come from Timelock."
         );
         require(

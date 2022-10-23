@@ -7,7 +7,9 @@ import "./Timelock.sol";
 import "../interfaces/IveFOXS.sol";
 import "../interfaces/ITimelock.sol";
 
-abstract contract GovernorStorage {
+import "@openzeppelin/contracts/utils/Context.sol";
+
+abstract contract GovernorStorage{
     /// @notice The address of the governance token
     IveFOXS public veFOXS;
 
@@ -129,7 +131,7 @@ abstract contract GovernorEvents {
 /**
  * @title Governor
  */
-contract Governor is GovernorStorage, GovernorEvents {
+contract Governor is GovernorStorage, GovernorEvents, Context {
     /// @notice The name of this contract
     string public constant name = "Governor";
 
@@ -192,7 +194,7 @@ contract Governor is GovernorStorage, GovernorEvents {
     ) public returns (uint256) {
         // Allow addresses above proposal threshold and whitelisted addresses to propose
         require(
-            veFOXS.getPriorVotes(msg.sender, block.number - 1) >
+            veFOXS.getPriorVotes(_msgSender(), block.number - 1) >
                 proposalThreshold,
             "Governor::propose: proposer votes below proposal threshold"
         );
@@ -208,7 +210,7 @@ contract Governor is GovernorStorage, GovernorEvents {
             "Governor::propose: too many actions"
         );
 
-        uint256 latestProposalId = latestProposalIds[msg.sender];
+        uint256 latestProposalId = latestProposalIds[_msgSender()];
         if (latestProposalId != 0) {
             ProposalState proposersLatestProposalState = state(
                 latestProposalId
@@ -230,7 +232,7 @@ contract Governor is GovernorStorage, GovernorEvents {
         uint256 newProposalID = proposalCount;
         Proposal storage newProposal = proposals[newProposalID];
         newProposal.id = newProposalID;
-        newProposal.proposer = msg.sender;
+        newProposal.proposer = _msgSender();
         newProposal.eta = 0;
         newProposal.targets = targets;
         newProposal.values = values;
@@ -248,7 +250,7 @@ contract Governor is GovernorStorage, GovernorEvents {
 
         emit ProposalCreated(
             newProposal.id,
-            msg.sender,
+            _msgSender(),
             targets,
             values,
             signatures,
@@ -336,7 +338,7 @@ contract Governor is GovernorStorage, GovernorEvents {
         Proposal storage proposal = proposals[proposalId];
 
         // Proposer can cancel
-        if (msg.sender != proposal.proposer) {
+        if (_msgSender() != proposal.proposer) {
             require(
                 (veFOXS.getPriorVotes(proposal.proposer, block.number - 1) <
                     proposalThreshold),
@@ -436,10 +438,10 @@ contract Governor is GovernorStorage, GovernorEvents {
      */
     function castVote(uint256 proposalId, uint8 support) external {
         emit VoteCast(
-            msg.sender,
+            _msgSender(),
             proposalId,
             support,
-            castVoteInternal(msg.sender, proposalId, support),
+            castVoteInternal(_msgSender(), proposalId, support),
             ""
         );
     }
@@ -456,10 +458,10 @@ contract Governor is GovernorStorage, GovernorEvents {
         string calldata reason
     ) external {
         emit VoteCast(
-            msg.sender,
+            _msgSender(),
             proposalId,
             support,
-            castVoteInternal(msg.sender, proposalId, support),
+            castVoteInternal(_msgSender(), proposalId, support),
             reason
         );
     }
