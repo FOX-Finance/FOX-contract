@@ -185,8 +185,10 @@ TBD
 
 ---
 
+<!--
 # TODO
 
--[] BNB liquid staking -> stBNB as collateral
--[] LP as collateral
--[] solidity-docgen
+- [ ] BNB liquid staking -> stBNB as collateral
+- [ ] LP as collateral
+- [ ] solidity-docgen
+-->
