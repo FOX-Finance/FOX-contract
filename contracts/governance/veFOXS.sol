@@ -41,8 +41,8 @@ contract veFOXS is ERC20VotesComp {
         foxs = IERC20(foxs_);
     }
 
-    /// @notice Deposits FOXSes and mints veFOXSes.
-    /// @param amount Amount of FOXSes to stake.
+    /// @notice Deposits FOXS and mints veFOXS.
+    /// @param amount Amount of FOXS to stake.
     /// @param period Must be 0 (for 3 months), 1 (for 6 months), or 2 (for 1 year).
     /// @return veAmount Newly minted veFOXSes.
     function deposit(uint256 amount, uint256 period)

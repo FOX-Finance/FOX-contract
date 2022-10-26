@@ -73,6 +73,10 @@ abstract contract SinCDP is
         uint256 currTimestamp
     );
 
+    event SetMaxLTV(uint256 prevMaxLTV, uint256 currMaxLTV);
+    event SetFeeRatio(uint256 prevFeeRatio, uint256 currFeeRatio);
+    event SetCap(uint256 prevCap, uint256 currCap);
+
     //============ Modifiers ============//
 
     modifier nonzeroAddress(address account_) {
@@ -104,6 +108,26 @@ abstract contract SinCDP is
         maxLTV = maxLTV_;
         feeRatio = feeRatio_;
         cap = cap_;
+    }
+
+    //============ Owner ============//
+
+    function setMaxLTV(uint256 newMaxLTV) external onlyOwner {
+        uint256 prevMaxLTV = maxLTV;
+        maxLTV = newMaxLTV;
+        emit SetMaxLTV(prevMaxLTV, maxLTV);
+    }
+
+    function setFeeRatio(uint256 newFeeRatio) external onlyOwner {
+        uint256 prevFeeRatio = feeRatio;
+        feeRatio = newFeeRatio;
+        emit SetFeeRatio(prevFeeRatio, feeRatio);
+    }
+
+    function setCap(uint256 newCap) external onlyOwner {
+        uint256 prevCap = cap;
+        cap = newCap;
+        emit SetCap(prevCap, cap);
     }
 
     //============ Pausable ============//
@@ -370,12 +394,14 @@ abstract contract SinCDP is
     ) internal virtual {
         CDP storage _cdp = cdps[id_];
 
+        address _feeTo = feeTo != address(0) ? feeTo : account_;
+
         // repay fee first
         if (_cdp.fee >= amount_) {
             _cdp.fee -= amount_;
-            debtToken.safeTransferFrom(account_, feeTo, amount_);
+            debtToken.safeTransferFrom(account_, _feeTo, amount_);
         } else if (_cdp.fee != 0) {
-            debtToken.safeTransferFrom(account_, feeTo, _cdp.fee);
+            debtToken.safeTransferFrom(account_, _feeTo, _cdp.fee);
             _cdp.debt -= (amount_ - _cdp.fee);
             ISIN(address(debtToken)).burnFrom(account_, amount_ - _cdp.fee);
             _cdp.fee = 0;

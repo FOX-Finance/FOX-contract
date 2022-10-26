@@ -37,9 +37,6 @@ contract FoxFarm is SinCDP {
 
     //============ View Functions ============//
 
-    function trust() public view returns (uint256 level) {
-        
-    }
 
     //============ Liquidation ============//
 
@@ -50,6 +47,11 @@ contract FoxFarm is SinCDP {
     function globalLiquidate() external {
 
     }
+
+    //============ FOX Operations (+override) ============//
+
+    // TODO:
+    // 1 ether * (DENOMINATOR - trustLevel) / DENOMINATOR == 1 ether * maxLTV / DENOMINATOR;
 
     //============ CDP Operations (+override) ============//
 
@@ -75,7 +77,7 @@ contract FoxFarm is SinCDP {
     {
         _update(id_);
         _borrow(_msgSender(), id_, amount_); // now contract has SINs.
-        uint256 foxsAmount = requiredFoxs(); // get FOXSes. 
+        uint256 foxsAmount = requiredFoxs(); // get FOXS. 
         stableToken.safeTransferFrom(_msgSender(), address(this), foxsAmount);
     }
 
