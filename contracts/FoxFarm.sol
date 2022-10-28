@@ -5,7 +5,7 @@ pragma solidity 0.8.9;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "./cdp/cdp.sol";
+import "./tokens/CDP.sol";
 
 /**
  * @title FOX Finance Farm.
@@ -13,7 +13,7 @@ import "./cdp/cdp.sol";
  * @notice Gets WETH as collateral and FOXS as share, gives FOX as debt.
  * Also it is treasury of collaterals-WETHs- and SINs.
  */
-contract FoxFarm is SinCDP {
+contract FoxFarm is CDPNFT {
     using SafeERC20 for IERC20;
 
     IERC20 public immutable stableToken;
@@ -29,7 +29,7 @@ contract FoxFarm is SinCDP {
         uint256 feeRatio_,
         uint256 cap_
     )
-        SinCDP(feeTo_, collateralToken_, debtToken_, maxLTV_, feeRatio_, cap_)
+        CDPNFT(feeTo_, collateralToken_, debtToken_, maxLTV_, feeRatio_, cap_)
         nonzeroAddress(stableToken_)
     {
         stableToken = IERC20(stableToken_);
@@ -50,7 +50,7 @@ contract FoxFarm is SinCDP {
 
     //============ FOX Operations (+override) ============//
 
-    // TODO:
+    // TODO: Price
     // 1 ether * (DENOMINATOR - trustLevel) / DENOMINATOR == 1 ether * maxLTV / DENOMINATOR;
 
     //============ CDP Operations (+override) ============//

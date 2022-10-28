@@ -18,8 +18,8 @@ import "../interfaces/ISIN.sol";
  * @notice Gets WETH as collateral, gives SIN as debt.
  * @dev Abstract contract.
  */
-abstract contract SinCDP is
-    ERC721("Collateralized Debt Position", "SinCDP"),
+abstract contract CDPNFT is
+    ERC721("Collateralized Debt Position", "CDPNFT"),
     Pausable,
     Ownable
 {
@@ -82,7 +82,7 @@ abstract contract SinCDP is
     modifier nonzeroAddress(address account_) {
         require(
             account_ != address(0),
-            "SinCDP::nonzeroAddress: Account must be nonzero."
+            "CDPNFT::nonzeroAddress: Account must be nonzero."
         );
         _;
     }
@@ -301,7 +301,7 @@ abstract contract SinCDP is
 
         require(
             _isApprovedOrOwner(account_, id_),
-            "SinCDP::_close: Not a valid caller."
+            "CDPNFT::_close: Not a valid caller."
         );
 
         if (_cdp.debt != 0) {
@@ -330,7 +330,7 @@ abstract contract SinCDP is
 
         require(
             _cdp.collateral >= minimumCollateral,
-            "SinCDP::_deposit: Not enough collateral."
+            "CDPNFT::_deposit: Not enough collateral."
         );
 
         emit Deposit(account_, id_, amount_);
@@ -345,7 +345,7 @@ abstract contract SinCDP is
 
         require(
             _isApprovedOrOwner(account_, id_),
-            "SinCDP::_withdraw: Not a valid caller."
+            "CDPNFT::_withdraw: Not a valid caller."
         );
 
         _cdp.collateral -= amount_;
@@ -353,11 +353,11 @@ abstract contract SinCDP is
 
         require(
             isSafe(id_),
-            "SinCDP::_withdraw: CDP operation exceeds max LTV."
+            "CDPNFT::_withdraw: CDP operation exceeds max LTV."
         );
         require(
             _cdp.collateral == 0 || _cdp.collateral >= minimumCollateral,
-            "SinCDP::_withdraw: Not enough collateral."
+            "CDPNFT::_withdraw: Not enough collateral."
         );
 
         emit Withdraw(account_, id_, amount_);
@@ -372,16 +372,16 @@ abstract contract SinCDP is
 
         require(
             _isApprovedOrOwner(account_, id_),
-            "SinCDP::_borrow: Not a valid caller."
+            "CDPNFT::_borrow: Not a valid caller."
         );
 
         _cdp.debt += amount_;
         ISIN(address(debtToken)).mintTo(account_, amount_);
 
-        require(isSafe(id_), "SinCDP::_borrow: CDP operation exceeds max LTV.");
+        require(isSafe(id_), "CDPNFT::_borrow: CDP operation exceeds max LTV.");
         require(
             debtToken.totalSupply() <= cap,
-            "SinCDP::_borrow: Cannot borrow SIN anymore."
+            "CDPNFT::_borrow: Cannot borrow SIN anymore."
         );
 
         emit Borrow(account_, id_, amount_);

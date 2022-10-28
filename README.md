@@ -6,6 +6,13 @@ TBD
 DAI + FRAX = FOX
 ```
 
+<!--
+How to increase capital efficiency?
+- increase maxLTV: more easy, but more risky
+- increase service's trust: in some ways, more risky. But collaterals are SAFU
+- increase both maxLTV and trust: 😲
+-->
+
 ## Trust & Decentralization
 
 TBD
@@ -183,12 +190,16 @@ $ npx hardhat run scripts/deploy.js
 
 TBD
 
+<!--
 ---
 
-<!--
 # TODO
 
+- [ ] Axelar
+- [ ] solidity-docgen
+- [ ] Docusaurus
+
+# Roadmap
 - [ ] BNB liquid staking -> stBNB as collateral
 - [ ] LP as collateral
-- [ ] solidity-docgen
 -->
