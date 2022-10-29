@@ -10,9 +10,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "../oracle/Oracle.sol";
 import "../utils/Interval.sol";
-import "../utils/Nonzero.sol";
-
 import "../interfaces/ISIN.sol";
+
+import "../interfaces/ICDP.sol";
 
 // import "./interfaces/IWETH.sol";
 
@@ -22,10 +22,10 @@ import "../interfaces/ISIN.sol";
  * @notice Gets WETH as collateral, gives SIN as debt.
  * @dev Abstract contract.
  */
-abstract contract abstractCDP is
+abstract contract CDP is
+    ICDP,
     Oracle,
     Interval,
-    Nonzero,
     ERC721,
     Pausable,
     Ownable
@@ -48,47 +48,11 @@ abstract contract abstractCDP is
     uint256 private constant _TIME_PERIOD = 1 hours;
 
     address internal _feeTo;
-    uint256 internal _feeRatio; // (_feeRatio / _DENOMINATOR)
+    uint256 internal _feeRatio; // (_feeRatio / _DENOMINATOR) // as default
 
-    struct CDP {
-        uint256 collateral;
-        uint256 debt;
-        uint256 fee; // as SIN
-        uint256 latestUpdate;
-    }
-    mapping(uint256 => CDP) public cdps;
+    // CDP
+    mapping(uint256 => CollateralizedDebtPosition) public cdps;
     uint256 public id;
-
-    //============ Events ============//
-
-    event Open(address indexed account_, uint256 indexed id_);
-    event Close(address indexed account_, uint256 indexed id_);
-    event Deposit(
-        address indexed account_,
-        uint256 indexed id_,
-        uint256 amount
-    );
-    event Withdraw(
-        address indexed account_,
-        uint256 indexed id_,
-        uint256 amount
-    );
-    event Borrow(address indexed account_, uint256 indexed id_, uint256 amount);
-    event Repay(address indexed account_, uint256 indexed id_, uint256 amount);
-
-    event Update(
-        uint256 indexed id_,
-        uint256 prevFee,
-        uint256 currFee,
-        uint256 prevTimestamp,
-        uint256 currTimestamp
-    );
-
-    event SetMaxLTV(uint256 prevMaxLTV, uint256 currMaxLTV);
-    event SetCap(uint256 prevCap, uint256 currCap);
-
-    event SetFeeTo(address prevFeeTo, address currFeeTo);
-    event SetFeeRatio(uint256 prevFeeRatio, uint256 currFeeRatio);
 
     //============ Modifiers ============//
 
@@ -107,8 +71,6 @@ abstract contract abstractCDP is
     )
         ERC721(name_, symbol_)
         Oracle(oracleFeeder_)
-        nonzeroAddress(collateralToken_)
-        nonzeroAddress(debtToken_)
     {
         _feeTo = feeTo_; // can be zero address
         _collateralToken = IERC20(collateralToken_);
@@ -190,7 +152,7 @@ abstract contract abstractCDP is
      *@dev multiplied by _DENOMINATOR.
      */
     function currentLTV(uint256 id_) public view returns (uint256 ltv) {
-        CDP memory _cdp = cdps[id_];
+        CollateralizedDebtPosition memory _cdp = cdps[id_];
         ltv =
             (_cdp.debt * _DENOMINATOR * _DENOMINATOR) /
             (_cdp.collateral * _collateralPrice);
@@ -200,7 +162,7 @@ abstract contract abstractCDP is
      *@dev multiplied by _DENOMINATOR.
      */
     function healthFactor(uint256 id_) public view returns (uint256 health) {
-        CDP memory _cdp = cdps[id_];
+        CollateralizedDebtPosition memory _cdp = cdps[id_];
         health =
             (_cdp.debt * _DENOMINATOR * _DENOMINATOR * _DENOMINATOR) /
             (_cdp.collateral * _collateralPrice * maxLTV);
@@ -328,11 +290,11 @@ abstract contract abstractCDP is
     }
 
     function _close(address account_, uint256 id_) internal {
-        CDP storage _cdp = cdps[id_];
+        CollateralizedDebtPosition storage _cdp = cdps[id_];
 
         require(
             _isApprovedOrOwner(account_, id_),
-            "abstractCDP::_close: Not a valid caller."
+            "CDP::_close: Not a valid caller."
         );
 
         if (_cdp.debt != 0) {
@@ -352,7 +314,7 @@ abstract contract abstractCDP is
         uint256 id_,
         uint256 amount_
     ) internal {
-        CDP storage _cdp = cdps[id_];
+        CollateralizedDebtPosition storage _cdp = cdps[id_];
 
         // require(_isApprovedOrOwner(_sender, id_)); // Anyone
 
@@ -361,7 +323,7 @@ abstract contract abstractCDP is
 
         require(
             _cdp.collateral >= _minimumCollateral,
-            "abstractCDP::_deposit: Not enough collateral."
+            "CDP::_deposit: Not enough collateral."
         );
 
         emit Deposit(account_, id_, amount_);
@@ -372,11 +334,11 @@ abstract contract abstractCDP is
         uint256 id_,
         uint256 amount_
     ) internal {
-        CDP storage _cdp = cdps[id_];
+        CollateralizedDebtPosition storage _cdp = cdps[id_];
 
         require(
             _isApprovedOrOwner(account_, id_),
-            "abstractCDP::_withdraw: Not a valid caller."
+            "CDP::_withdraw: Not a valid caller."
         );
 
         _cdp.collateral -= amount_;
@@ -384,11 +346,11 @@ abstract contract abstractCDP is
 
         require(
             isSafe(id_),
-            "abstractCDP::_withdraw: CDP operation exceeds max LTV."
+            "CDP::_withdraw: CDP operation exceeds max LTV."
         );
         require(
             _cdp.collateral == 0 || _cdp.collateral >= _minimumCollateral,
-            "abstractCDP::_withdraw: Not enough collateral."
+            "CDP::_withdraw: Not enough collateral."
         );
 
         emit Withdraw(account_, id_, amount_);
@@ -399,11 +361,11 @@ abstract contract abstractCDP is
         uint256 id_,
         uint256 amount_
     ) internal virtual {
-        CDP storage _cdp = cdps[id_];
+        CollateralizedDebtPosition storage _cdp = cdps[id_];
 
         require(
             _isApprovedOrOwner(account_, id_),
-            "abstractCDP::_borrow: Not a valid caller."
+            "CDP::_borrow: Not a valid caller."
         );
 
         _cdp.debt += amount_;
@@ -411,11 +373,11 @@ abstract contract abstractCDP is
 
         require(
             isSafe(id_),
-            "abstractCDP::_borrow: CDP operation exceeds max LTV."
+            "CDP::_borrow: CDP operation exceeds max LTV."
         );
         require(
             _debtToken.totalSupply() <= cap,
-            "abstractCDP::_borrow: Cannot borrow SIN anymore."
+            "CDP::_borrow: Cannot borrow SIN anymore."
         );
 
         emit Borrow(account_, id_, amount_);
@@ -426,7 +388,7 @@ abstract contract abstractCDP is
         uint256 id_,
         uint256 amount_
     ) internal virtual {
-        CDP storage _cdp = cdps[id_];
+        CollateralizedDebtPosition storage _cdp = cdps[id_];
 
         address feeTo = _feeTo != address(0) ? _feeTo : account_;
 
@@ -448,7 +410,7 @@ abstract contract abstractCDP is
      * @dev Updates fee and timestamp.
      */
     function _update(uint256 id_) internal returns (uint256 additionalFee) {
-        CDP storage _cdp = cdps[id_];
+        CollateralizedDebtPosition storage _cdp = cdps[id_];
 
         uint256 prevTimestamp = _cdp.latestUpdate;
         uint256 currTimestamp = block.timestamp;
