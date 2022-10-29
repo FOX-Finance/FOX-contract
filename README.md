@@ -202,10 +202,10 @@ TBD
 ---
 
 # TODO
-
 - [ ] Axelar
 - [ ] solidity-docgen
 - [ ] Docusaurus
+- [ ] CI/CD
 
 # Roadmap
 - [ ] BNB liquid staking -> stBNB as collateral

@@ -1,10 +1,16 @@
+compile:
+	npx hardhat clean
+	npx hardhat compile
+
 set:
 	npm install
+	npx hardhat clean
 	npx hardhat compile
 
 reset:
 	make clean
 	npm install
+	npx hardhat clean
 	npx hardhat compile
 
 clean:
