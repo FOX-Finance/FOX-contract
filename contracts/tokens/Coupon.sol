@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "../interfaces/ICoupon.sol";
 
-import "./abstractCDP.sol";
+import "./CDP.sol";
 import "./SIN.sol";
 
 // import "./interfaces/IWETH.sol";
@@ -20,7 +20,7 @@ import "./SIN.sol";
  * @author Luke Park (lukepark327@gmail.com)
  * @notice Gets WETH as collateral, gives minus SIN as debt.
  */
-contract Coupon is abstractCDP {
+contract Coupon is CDP {
     using SafeERC20 for IERC20;
 
     //============ Initialize ============//
@@ -33,15 +33,15 @@ contract Coupon is abstractCDP {
         uint256 cap_,
         uint256 feeRatio_
     )
-        abstractCDP(
+        CDP(
             "FoxFarm",
             "FOXCDP",
-            feeTo_,
             address(0), // no oracle
+            feeTo_,
             collateralToken_,
-            grantToken_,
+            grantToken_, // debtToken_
             maxLTV_,
-            cap_,
+            type(uint256).max,
             feeRatio_
         )
     {}

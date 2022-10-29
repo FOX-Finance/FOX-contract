@@ -33,12 +33,6 @@ contract Oracle is IOracle, Context {
     //============ Initialize ============//
 
     constructor(address oracleFeeder_) {
-        // can be zero (Coupon)
-        // require(
-        //     oracleFeeder_ != address(0),
-        //     "Oracle::nonzeroAddress: Account must be nonzero."
-        // );
-
         _oracleFeeder = oracleFeeder_;
     }
 

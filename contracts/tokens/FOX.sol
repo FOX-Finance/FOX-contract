@@ -74,6 +74,7 @@ contract FOX is
         uint256 burnFeeRatio_ // 45 as default
     )
         ERC20("Fractional Over Collateralized Stablecoin", "FOX")
+        nonzeroAddress(oracleFeeder_)
         Oracle(oracleFeeder_)
         nonzeroAddress(debtToken_)
         nonzeroAddress(shareToken_)

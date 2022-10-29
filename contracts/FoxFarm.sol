@@ -5,7 +5,8 @@ pragma solidity 0.8.9;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "./tokens/abstractCDP.sol";
+import "./utils/Nonzero.sol";
+import "./tokens/CDP.sol";
 
 /**
  * @title FOX Finance Farm.
@@ -13,10 +14,10 @@ import "./tokens/abstractCDP.sol";
  * @notice Gets WETH as collateral and FOXS as share, gives FOX as debt.
  * Also it is treasury of collaterals-WETHs- and SINs.
  */
-contract FoxFarm is abstractCDP {
+contract FoxFarm is CDP, Nonzero {
     using SafeERC20 for IERC20;
 
-    IERC20 public immutable stableToken;
+    IERC20 internal immutable _stableToken;
 
     //============ Initialize ============//
 
@@ -30,7 +31,9 @@ contract FoxFarm is abstractCDP {
         uint256 cap_,
         uint256 feeRatio_
     )
-        abstractCDP(
+        nonzeroAddress(collateralToken_)
+        nonzeroAddress(debtToken_)
+        CDP(
             "FoxFarm",
             "FOXCDP",
             oracleFeeder_,
@@ -43,7 +46,7 @@ contract FoxFarm is abstractCDP {
         )
         nonzeroAddress(stableToken_)
     {
-        stableToken = IERC20(stableToken_);
+        _stableToken = IERC20(stableToken_);
     }
 
     //============ View Functions ============//
@@ -105,7 +108,7 @@ contract FoxFarm is abstractCDP {
         _update(id_);
         _borrow(_msgSender(), id_, amount_); // now contract has SINs.
         uint256 foxsAmount = requiredFoxs(); // get FOXS.
-        stableToken.safeTransferFrom(_msgSender(), address(this), foxsAmount);
+        _stableToken.safeTransferFrom(_msgSender(), address(this), foxsAmount);
     }
 
     /**
@@ -126,7 +129,7 @@ contract FoxFarm is abstractCDP {
         uint256 id_,
         uint256 amount_
     ) internal override {
-        CDP storage _cdp = cdps[id_];
+        CollateralizedDebtPosition storage _cdp = cdps[id_];
 
         require(
             _isApprovedOrOwner(account_, id_),
@@ -151,7 +154,7 @@ contract FoxFarm is abstractCDP {
         uint256 id_,
         uint256 amount_
     ) internal override {
-        CDP storage _cdp = cdps[id_];
+        CollateralizedDebtPosition storage _cdp = cdps[id_];
 
         // repay fee first
         if (_cdp.fee >= amount_) {

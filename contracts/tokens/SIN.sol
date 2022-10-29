@@ -5,9 +5,12 @@ pragma solidity 0.8.9;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+import "../utils/Allowlist.sol";
+import "../utils/Nonzero.sol";
+
 import "../interfaces/ISIN.sol";
 
-abstract contract abstractSIN is ISIN, ERC20, Ownable {
+abstract contract abstractSIN is ISIN, Allowlist, ERC20, Ownable {
     function approveMax(address spender) public {
         _approve(_msgSender(), spender, type(uint256).max);
     }
@@ -24,42 +27,21 @@ abstract contract abstractSIN is ISIN, ERC20, Ownable {
         _burn(account, amount);
     }
 
-    //============ Lock ============//
-
-    mapping(address => bool) private _allowlist;
-    bool private _allowAll;
-
-    event AddAllowlist(address newAddr);
-    event RemoveAllowlist(address targetAddr);
-    event AllowAll(bool prevAllowAll, bool currAllowAll);
-
-    modifier onlyAllowlist() {
-        require(
-            _allowAll || _allowlist[_msgSender()],
-            "FOX:onlyAllowlist: Sender must be allowed."
-        );
-        _;
-    }
+    //============ Owner ============//
 
     function addAllowlist(address newAddr) external onlyOwner {
-        if (!_allowlist[newAddr]) {
-            _allowlist[newAddr] = true;
-        }
-        emit AddAllowlist(newAddr);
+        _addAllowlist(newAddr);
     }
 
     function removeAllowlist(address targetAddr) external onlyOwner {
-        if (_allowlist[targetAddr]) {
-            _allowlist[targetAddr] = false;
-        }
-        emit RemoveAllowlist(targetAddr);
+        _removeAllowlist(targetAddr);
     }
 
     function setAllowAll(bool newAllowAll) external onlyOwner {
-        bool prevAllowAll = _allowAll;
-        _allowAll = newAllowAll;
-        emit AllowAll(prevAllowAll, _allowAll);
+        _setAllowAll(newAllowAll);
     }
+
+    //============ Lock ============//
 
     function _beforeTokenTransfer(
         address from,
@@ -73,10 +55,13 @@ abstract contract abstractSIN is ISIN, ERC20, Ownable {
  * @author Luke Park (lukepark327@gmail.com)
  * @dev Uses internally to represent debt.
  */
-contract SIN is abstractSIN {
+contract SIN is abstractSIN, Nonzero {
     IERC20 public immutable nis;
 
-    constructor(address nis_) ERC20("Stable INtermidiate coin", "SIN") {
+    constructor(address nis_)
+        nonzeroAddress(nis_)
+        ERC20("Stable INtermidiate coin", "SIN")
+    {
         nis = IERC20(nis_);
     }
 
