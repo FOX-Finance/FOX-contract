@@ -162,15 +162,19 @@ abstract contract abstractCDP is
         _updateOracleFeeder(newOracleFeeder);
     }
 
-    function updateCollateralPrice(uint256 newCollateralPrice, uint256 confidence)
-        external
-        onlyOracleFeeder
-    {
+    function updateCollateralPrice(
+        uint256 newCollateralPrice,
+        uint256 confidence
+    ) external onlyOracleFeeder {
         // TODO: confidence interval, delta -> pause
 
         uint256 prevPrice = _collateralPrice;
         _collateralPrice = newCollateralPrice;
-        emit UpdatePrice(address(_collateralToken), prevPrice, _collateralPrice);
+        emit UpdatePrice(
+            address(_collateralToken),
+            prevPrice,
+            _collateralPrice
+        );
     }
 
     //============ View Functions ============//
@@ -182,16 +186,24 @@ abstract contract abstractCDP is
         return healthFactor(id_) < 1;
     }
 
+    /**
+     *@dev multiplied by _DENOMINATOR.
+     */
     function currentLTV(uint256 id_) public view returns (uint256 ltv) {
         CDP memory _cdp = cdps[id_];
-        ltv = (_cdp.debt * _DENOMINATOR) / _cdp.collateral;
+        ltv =
+            (_cdp.debt * _DENOMINATOR * _DENOMINATOR) /
+            (_cdp.collateral * _collateralPrice);
     }
 
+    /**
+     *@dev multiplied by _DENOMINATOR.
+     */
     function healthFactor(uint256 id_) public view returns (uint256 health) {
         CDP memory _cdp = cdps[id_];
         health =
-            (_cdp.debt * _DENOMINATOR * _DENOMINATOR) /
-            (_cdp.collateral * maxLTV);
+            (_cdp.debt * _DENOMINATOR * _DENOMINATOR * _DENOMINATOR) /
+            (_cdp.collateral * _collateralPrice * maxLTV);
     }
 
     //============ CDP Operations ============//
