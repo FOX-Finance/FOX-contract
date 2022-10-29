@@ -22,14 +22,7 @@ import "../interfaces/ICDP.sol";
  * @notice Gets WETH as collateral, gives SIN as debt.
  * @dev Abstract contract.
  */
-abstract contract CDP is
-    ICDP,
-    Oracle,
-    Interval,
-    ERC721,
-    Pausable,
-    Ownable
-{
+abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
     using SafeERC20 for IERC20;
 
     //============ Params ============//
@@ -48,7 +41,7 @@ abstract contract CDP is
     uint256 private constant _TIME_PERIOD = 1 hours;
 
     address internal _feeTo;
-    uint256 internal _feeRatio; // (_feeRatio / _DENOMINATOR) // as default
+    uint256 internal _feeRatio; // (_feeRatio / _DENOMINATOR) // stability fee
 
     // CDP
     mapping(uint256 => CollateralizedDebtPosition) public cdps;
@@ -68,10 +61,7 @@ abstract contract CDP is
         uint256 maxLTV_,
         uint256 cap_,
         uint256 feeRatio_
-    )
-        ERC721(name_, symbol_)
-        Oracle(oracleFeeder_)
-    {
+    ) ERC721(name_, symbol_) Oracle(oracleFeeder_) {
         _feeTo = feeTo_; // can be zero address
         _collateralToken = IERC20(collateralToken_);
         _debtToken = IERC20(debtToken_);
@@ -84,28 +74,28 @@ abstract contract CDP is
 
     //============ Owner ============//
 
-    function setFeeTo(address newFeeTo) external onlyOwner {
-        address prevFeeTo = _feeTo;
-        _feeTo = newFeeTo;
-        emit SetFeeTo(prevFeeTo, _feeTo);
-    }
-
-    function setMaxLTV(uint256 newMaxLTV) external onlyOwner {
+    function setMaxLTV(uint256 newMaxLTV) external virtual onlyOwner {
         uint256 prevMaxLTV = maxLTV;
         maxLTV = newMaxLTV;
         emit SetMaxLTV(prevMaxLTV, maxLTV);
     }
 
-    function setFeeRatio(uint256 newFeeRatio) external onlyOwner {
-        uint256 prevFeeRatio = _feeRatio;
-        _feeRatio = newFeeRatio;
-        emit SetFeeRatio(prevFeeRatio, _feeRatio);
-    }
-
-    function setCap(uint256 newCap) external onlyOwner {
+    function setCap(uint256 newCap) external virtual onlyOwner {
         uint256 prevCap = cap;
         cap = newCap;
         emit SetCap(prevCap, cap);
+    }
+
+    function setFeeTo(address newFeeTo) external virtual onlyOwner {
+        address prevFeeTo = _feeTo;
+        _feeTo = newFeeTo;
+        emit SetFeeTo(prevFeeTo, _feeTo);
+    }
+
+    function setFeeRatio(uint256 newFeeRatio) external virtual onlyOwner {
+        uint256 prevFeeRatio = _feeRatio;
+        _feeRatio = newFeeRatio;
+        emit SetFeeRatio(prevFeeRatio, _feeRatio);
     }
 
     //============ Pausable ============//
@@ -144,14 +134,14 @@ abstract contract CDP is
     /**
      * @notice CDP risk indicator.
      */
-    function isSafe(uint256 id_) public view returns (bool) {
+    function isSafe(uint256 id_) public view virtual returns (bool) {
         return healthFactor(id_) < 1;
     }
 
     /**
      *@dev multiplied by _DENOMINATOR.
      */
-    function currentLTV(uint256 id_) public view returns (uint256 ltv) {
+    function currentLTV(uint256 id_) public view virtual returns (uint256 ltv) {
         CollateralizedDebtPosition memory _cdp = cdps[id_];
         ltv =
             (_cdp.debt * _DENOMINATOR * _DENOMINATOR) /
@@ -161,7 +151,7 @@ abstract contract CDP is
     /**
      *@dev multiplied by _DENOMINATOR.
      */
-    function healthFactor(uint256 id_) public view returns (uint256 health) {
+    function healthFactor(uint256 id_) public view virtual returns (uint256 health) {
         CollateralizedDebtPosition memory _cdp = cdps[id_];
         health =
             (_cdp.debt * _DENOMINATOR * _DENOMINATOR * _DENOMINATOR) /
@@ -344,10 +334,7 @@ abstract contract CDP is
         _cdp.collateral -= amount_;
         _collateralToken.safeTransfer(account_, amount_);
 
-        require(
-            isSafe(id_),
-            "CDP::_withdraw: CDP operation exceeds max LTV."
-        );
+        require(isSafe(id_), "CDP::_withdraw: CDP operation exceeds max LTV.");
         require(
             _cdp.collateral == 0 || _cdp.collateral >= _minimumCollateral,
             "CDP::_withdraw: Not enough collateral."
@@ -371,10 +358,7 @@ abstract contract CDP is
         _cdp.debt += amount_;
         ISIN(address(_debtToken)).mintTo(account_, amount_);
 
-        require(
-            isSafe(id_),
-            "CDP::_borrow: CDP operation exceeds max LTV."
-        );
+        require(isSafe(id_), "CDP::_borrow: CDP operation exceeds max LTV.");
         require(
             _debtToken.totalSupply() <= cap,
             "CDP::_borrow: Cannot borrow SIN anymore."

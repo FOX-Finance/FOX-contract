@@ -18,6 +18,7 @@ contract FoxFarm is CDP, Nonzero {
     using SafeERC20 for IERC20;
 
     IERC20 internal immutable _stableToken;
+    IERC20 private immutable _shareToken;
 
     //============ Initialize ============//
 
@@ -26,6 +27,7 @@ contract FoxFarm is CDP, Nonzero {
         address feeTo_,
         address collateralToken_, // WETH
         address debtToken_, // SIN
+        address shareToken_, // FOXS
         address stableToken_, // FOX
         uint256 maxLTV_,
         uint256 cap_,
@@ -44,8 +46,10 @@ contract FoxFarm is CDP, Nonzero {
             cap_,
             feeRatio_
         )
+        nonzeroAddress(shareToken_)
         nonzeroAddress(stableToken_)
     {
+        _shareToken = IERC20(shareToken_);
         _stableToken = IERC20(stableToken_);
     }
 
