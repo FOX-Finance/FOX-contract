@@ -5,7 +5,7 @@ pragma solidity 0.8.9;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "./tokens/CDP.sol";
+import "./tokens/abstractCDP.sol";
 
 /**
  * @title FOX Finance Farm.
@@ -13,7 +13,7 @@ import "./tokens/CDP.sol";
  * @notice Gets WETH as collateral and FOXS as share, gives FOX as debt.
  * Also it is treasury of collaterals-WETHs- and SINs.
  */
-contract FoxFarm is CDPNFT {
+contract FoxFarm is abstractCDP {
     using SafeERC20 for IERC20;
 
     IERC20 public immutable stableToken;
@@ -21,15 +21,26 @@ contract FoxFarm is CDPNFT {
     //============ Initialize ============//
 
     constructor(
+        address oracleFeeder_,
         address feeTo_,
-        address collateralToken_, // ETH
+        address collateralToken_, // WETH
         address debtToken_, // SIN
         address stableToken_, // FOX
         uint256 maxLTV_,
-        uint256 feeRatio_,
-        uint256 cap_
+        uint256 cap_,
+        uint256 feeRatio_
     )
-        CDPNFT(feeTo_, collateralToken_, debtToken_, maxLTV_, feeRatio_, cap_)
+        abstractCDP(
+            "FoxFarm",
+            "FOXCDP",
+            oracleFeeder_,
+            feeTo_,
+            collateralToken_,
+            debtToken_,
+            maxLTV_,
+            cap_,
+            feeRatio_
+        )
         nonzeroAddress(stableToken_)
     {
         stableToken = IERC20(stableToken_);
@@ -37,21 +48,37 @@ contract FoxFarm is CDPNFT {
 
     //============ View Functions ============//
 
-
     //============ Liquidation ============//
 
-    function liquidate() external {
+    function liquidate() external {}
 
-    }
+    function globalLiquidate() external {}
 
-    function globalLiquidate() external {
+    // TODO: Fast liquidation
+    // when touch 100% collateral backing level
 
-    }
+    //============ Coupon ============//
+
+    // TODO: pair annihilation between SIN and NIS
 
     //============ FOX Operations (+override) ============//
 
     // TODO: Price
     // 1 ether * (DENOMINATOR - trustLevel) / DENOMINATOR == 1 ether * maxLTV / DENOMINATOR;
+
+    //============ Recallateralize ============//
+
+    function recollateralizeBorrowDebt() external whenNotPaused {}
+
+    function recollateralizeDepositCollateral() external whenNotPaused {}
+
+    //============ Buyback ============//
+
+    function buybackRepayDebt() external whenNotPaused {}
+
+    function buybackWithdrawCollateral() external whenNotPaused {}
+
+    function buybackCoupon() external whenNotPaused {}
 
     //============ CDP Operations (+override) ============//
 
@@ -77,7 +104,7 @@ contract FoxFarm is CDPNFT {
     {
         _update(id_);
         _borrow(_msgSender(), id_, amount_); // now contract has SINs.
-        uint256 foxsAmount = requiredFoxs(); // get FOXS. 
+        uint256 foxsAmount = requiredFoxs(); // get FOXS.
         stableToken.safeTransferFrom(_msgSender(), address(this), foxsAmount);
     }
 
@@ -92,9 +119,7 @@ contract FoxFarm is CDPNFT {
 
     //============ Internal Functions (+override) ============//
 
-    function requiredFoxs() public returns (uint256) {
-
-    }
+    function requiredFoxs() public returns (uint256) {}
 
     function _borrow(
         address account_,
@@ -109,12 +134,12 @@ contract FoxFarm is CDPNFT {
         );
 
         _cdp.debt += amount_;
-        // ISIN(address(debtToken)).mintTo(account_, amount_);
-        ISIN(address(debtToken)).mintTo(address(this), amount_); // save SINs here
+        // ISIN(address(_debtToken)).mintTo(account_, amount_);
+        ISIN(address(_debtToken)).mintTo(address(this), amount_); // save SINs here
 
         require(isSafe(id_), "FoxCDP::_borrow: CDP operation exceeds max LTV.");
         require(
-            debtToken.totalSupply() <= cap,
+            _debtToken.totalSupply() <= cap,
             "FoxCDP::_borrow: Cannot borrow SIN anymore."
         );
 
@@ -131,14 +156,14 @@ contract FoxFarm is CDPNFT {
         // repay fee first
         if (_cdp.fee >= amount_) {
             _cdp.fee -= amount_;
-            // debtToken.safeTransferFrom(account_, feeTo, amount_);
-            debtToken.safeTransfer(feeTo, amount_);
+            // _debtToken.safeTransferFrom(account_, _feeTo, amount_);
+            _debtToken.safeTransfer(_feeTo, amount_);
         } else if (_cdp.fee != 0) {
-            // debtToken.safeTransferFrom(account_, feeTo, _cdp.fee);
-            debtToken.safeTransfer(feeTo, _cdp.fee);
+            // _debtToken.safeTransferFrom(account_, _feeTo, _cdp.fee);
+            _debtToken.safeTransfer(_feeTo, _cdp.fee);
             _cdp.debt -= (amount_ - _cdp.fee);
-            // ISIN(address(debtToken)).burnFrom(account_, amount_ - _cdp.fee);
-            ISIN(address(debtToken)).burn(amount_ - _cdp.fee);
+            // ISIN(address(_debtToken)).burnFrom(account_, amount_ - _cdp.fee);
+            ISIN(address(_debtToken)).burn(amount_ - _cdp.fee);
             _cdp.fee = 0;
         }
 

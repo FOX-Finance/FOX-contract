@@ -162,6 +162,14 @@ TBD
 
 ---
 
+# Market
+
+## NFT Market
+
+## Liquidation Auction
+
+---
+
 # How to Use
 
 ### 0. Requirements

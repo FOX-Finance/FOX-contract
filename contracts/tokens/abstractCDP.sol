@@ -8,6 +8,10 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+import "../oracle/Oracle.sol";
+import "../utils/Interval.sol";
+import "../utils/Nonzero.sol";
+
 import "../interfaces/ISIN.sol";
 
 // import "./interfaces/IWETH.sol";
@@ -18,8 +22,11 @@ import "../interfaces/ISIN.sol";
  * @notice Gets WETH as collateral, gives SIN as debt.
  * @dev Abstract contract.
  */
-abstract contract CDPNFT is
-    ERC721("Collateralized Debt Position", "CDPNFT"),
+abstract contract abstractCDP is
+    Oracle,
+    Interval,
+    Nonzero,
+    ERC721,
     Pausable,
     Ownable
 {
@@ -27,17 +34,21 @@ abstract contract CDPNFT is
 
     //============ Params ============//
 
-    address public immutable feeTo;
-    IERC20 public immutable collateralToken;
-    IERC20 public immutable debtToken;
+    IERC20 internal immutable _collateralToken;
+    IERC20 internal immutable _debtToken;
 
-    uint256 public constant DENOMINATOR = 1000;
-    uint256 public constant minimumCollateral = 0.005 ether;
-    uint256 public maxLTV; // (maxLTV / DENOMINATOR)
-    uint256 public feeRatio; // (feeRatio / DENOMINATOR)
+    uint256 private _collateralPrice = 10000; // TODO: initial collateral price
+    // treats SIN is always $1.
+
+    uint256 private constant _DENOMINATOR = 10000;
+    uint256 private constant _minimumCollateral = 0.005 ether;
+    uint256 public maxLTV; // (maxLTV / _DENOMINATOR)
     uint256 public cap; // total debt cap
 
-    //============ CDP ============//
+    uint256 private constant _TIME_PERIOD = 1 hours;
+
+    address internal _feeTo;
+    uint256 internal _feeRatio; // (_feeRatio / _DENOMINATOR)
 
     struct CDP {
         uint256 collateral;
@@ -74,43 +85,48 @@ abstract contract CDPNFT is
     );
 
     event SetMaxLTV(uint256 prevMaxLTV, uint256 currMaxLTV);
-    event SetFeeRatio(uint256 prevFeeRatio, uint256 currFeeRatio);
     event SetCap(uint256 prevCap, uint256 currCap);
 
-    //============ Modifiers ============//
+    event SetFeeTo(address prevFeeTo, address currFeeTo);
+    event SetFeeRatio(uint256 prevFeeRatio, uint256 currFeeRatio);
 
-    modifier nonzeroAddress(address account_) {
-        require(
-            account_ != address(0),
-            "CDPNFT::nonzeroAddress: Account must be nonzero."
-        );
-        _;
-    }
+    //============ Modifiers ============//
 
     //============ Initialize ============//
 
     constructor(
+        string memory name_,
+        string memory symbol_,
+        address oracleFeeder_,
         address feeTo_,
         address collateralToken_,
         address debtToken_,
         uint256 maxLTV_,
-        uint256 feeRatio_,
-        uint256 cap_
+        uint256 cap_,
+        uint256 feeRatio_
     )
-        nonzeroAddress(feeTo_)
+        ERC721(name_, symbol_)
+        Oracle(oracleFeeder_)
         nonzeroAddress(collateralToken_)
         nonzeroAddress(debtToken_)
     {
-        feeTo = feeTo_; // can be zero address
-        collateralToken = IERC20(collateralToken_);
-        debtToken = IERC20(debtToken_);
+        _feeTo = feeTo_; // can be zero address
+        _collateralToken = IERC20(collateralToken_);
+        _debtToken = IERC20(debtToken_);
 
         maxLTV = maxLTV_;
-        feeRatio = feeRatio_;
         cap = cap_;
+
+        _feeRatio = feeRatio_;
     }
 
     //============ Owner ============//
+
+    function setFeeTo(address newFeeTo) external onlyOwner {
+        address prevFeeTo = _feeTo;
+        _feeTo = newFeeTo;
+        emit SetFeeTo(prevFeeTo, _feeTo);
+    }
 
     function setMaxLTV(uint256 newMaxLTV) external onlyOwner {
         uint256 prevMaxLTV = maxLTV;
@@ -119,9 +135,9 @@ abstract contract CDPNFT is
     }
 
     function setFeeRatio(uint256 newFeeRatio) external onlyOwner {
-        uint256 prevFeeRatio = feeRatio;
-        feeRatio = newFeeRatio;
-        emit SetFeeRatio(prevFeeRatio, feeRatio);
+        uint256 prevFeeRatio = _feeRatio;
+        _feeRatio = newFeeRatio;
+        emit SetFeeRatio(prevFeeRatio, _feeRatio);
     }
 
     function setCap(uint256 newCap) external onlyOwner {
@@ -132,26 +148,29 @@ abstract contract CDPNFT is
 
     //============ Pausable ============//
 
-    /**
-     * @notice Triggers stopped state.
-     *
-     * Requirements:
-     *
-     * - The contract must not be paused.
-     */
     function pause() public onlyOwner {
         _pause();
     }
 
-    /**
-     * @notice Returns to normal state.
-     *
-     * Requirements:
-     *
-     * - The contract must be paused.
-     */
     function unpause() public onlyOwner {
         _unpause();
+    }
+
+    //============ Oracle Functions ============//
+
+    function updateOracleFeeder(address newOracleFeeder) external onlyOwner {
+        _updateOracleFeeder(newOracleFeeder);
+    }
+
+    function updateCollateralPrice(uint256 newCollateralPrice, uint256 confidence)
+        external
+        onlyOracleFeeder
+    {
+        // TODO: confidence interval, delta -> pause
+
+        uint256 prevPrice = _collateralPrice;
+        _collateralPrice = newCollateralPrice;
+        emit UpdatePrice(address(_collateralToken), prevPrice, _collateralPrice);
     }
 
     //============ View Functions ============//
@@ -165,13 +184,13 @@ abstract contract CDPNFT is
 
     function currentLTV(uint256 id_) public view returns (uint256 ltv) {
         CDP memory _cdp = cdps[id_];
-        ltv = (_cdp.debt * DENOMINATOR) / _cdp.collateral;
+        ltv = (_cdp.debt * _DENOMINATOR) / _cdp.collateral;
     }
 
     function healthFactor(uint256 id_) public view returns (uint256 health) {
         CDP memory _cdp = cdps[id_];
         health =
-            (_cdp.debt * DENOMINATOR * DENOMINATOR) /
+            (_cdp.debt * _DENOMINATOR * _DENOMINATOR) /
             (_cdp.collateral * maxLTV);
     }
 
@@ -301,7 +320,7 @@ abstract contract CDPNFT is
 
         require(
             _isApprovedOrOwner(account_, id_),
-            "CDPNFT::_close: Not a valid caller."
+            "abstractCDP::_close: Not a valid caller."
         );
 
         if (_cdp.debt != 0) {
@@ -326,11 +345,11 @@ abstract contract CDPNFT is
         // require(_isApprovedOrOwner(_sender, id_)); // Anyone
 
         _cdp.collateral += amount_;
-        collateralToken.safeTransferFrom(account_, address(this), amount_);
+        _collateralToken.safeTransferFrom(account_, address(this), amount_);
 
         require(
-            _cdp.collateral >= minimumCollateral,
-            "CDPNFT::_deposit: Not enough collateral."
+            _cdp.collateral >= _minimumCollateral,
+            "abstractCDP::_deposit: Not enough collateral."
         );
 
         emit Deposit(account_, id_, amount_);
@@ -345,19 +364,19 @@ abstract contract CDPNFT is
 
         require(
             _isApprovedOrOwner(account_, id_),
-            "CDPNFT::_withdraw: Not a valid caller."
+            "abstractCDP::_withdraw: Not a valid caller."
         );
 
         _cdp.collateral -= amount_;
-        collateralToken.safeTransfer(account_, amount_);
+        _collateralToken.safeTransfer(account_, amount_);
 
         require(
             isSafe(id_),
-            "CDPNFT::_withdraw: CDP operation exceeds max LTV."
+            "abstractCDP::_withdraw: CDP operation exceeds max LTV."
         );
         require(
-            _cdp.collateral == 0 || _cdp.collateral >= minimumCollateral,
-            "CDPNFT::_withdraw: Not enough collateral."
+            _cdp.collateral == 0 || _cdp.collateral >= _minimumCollateral,
+            "abstractCDP::_withdraw: Not enough collateral."
         );
 
         emit Withdraw(account_, id_, amount_);
@@ -372,16 +391,19 @@ abstract contract CDPNFT is
 
         require(
             _isApprovedOrOwner(account_, id_),
-            "CDPNFT::_borrow: Not a valid caller."
+            "abstractCDP::_borrow: Not a valid caller."
         );
 
         _cdp.debt += amount_;
-        ISIN(address(debtToken)).mintTo(account_, amount_);
+        ISIN(address(_debtToken)).mintTo(account_, amount_);
 
-        require(isSafe(id_), "CDPNFT::_borrow: CDP operation exceeds max LTV.");
         require(
-            debtToken.totalSupply() <= cap,
-            "CDPNFT::_borrow: Cannot borrow SIN anymore."
+            isSafe(id_),
+            "abstractCDP::_borrow: CDP operation exceeds max LTV."
+        );
+        require(
+            _debtToken.totalSupply() <= cap,
+            "abstractCDP::_borrow: Cannot borrow SIN anymore."
         );
 
         emit Borrow(account_, id_, amount_);
@@ -394,16 +416,16 @@ abstract contract CDPNFT is
     ) internal virtual {
         CDP storage _cdp = cdps[id_];
 
-        address _feeTo = feeTo != address(0) ? feeTo : account_;
+        address feeTo = _feeTo != address(0) ? _feeTo : account_;
 
         // repay fee first
         if (_cdp.fee >= amount_) {
             _cdp.fee -= amount_;
-            debtToken.safeTransferFrom(account_, _feeTo, amount_);
+            _debtToken.safeTransferFrom(account_, feeTo, amount_);
         } else if (_cdp.fee != 0) {
-            debtToken.safeTransferFrom(account_, _feeTo, _cdp.fee);
+            _debtToken.safeTransferFrom(account_, feeTo, _cdp.fee);
             _cdp.debt -= (amount_ - _cdp.fee);
-            ISIN(address(debtToken)).burnFrom(account_, amount_ - _cdp.fee);
+            ISIN(address(_debtToken)).burnFrom(account_, amount_ - _cdp.fee);
             _cdp.fee = 0;
         }
 
@@ -422,8 +444,8 @@ abstract contract CDPNFT is
         uint256 currFee;
 
         additionalFee =
-            (_cdp.debt * (currTimestamp - prevTimestamp) * feeRatio) /
-            (DENOMINATOR * 365 * 24 * 60 * 60);
+            (_cdp.debt * (currTimestamp - prevTimestamp) * _feeRatio) /
+            (_DENOMINATOR * 365 * 24 * 60 * 60);
         _cdp.fee += additionalFee;
 
         _cdp.latestUpdate = currTimestamp;
