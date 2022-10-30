@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./utils/Nonzero.sol";
 import "./tokens/CDP.sol";
+import "./interfaces/IFOX.sol";
 
 /**
  * @title FOX Finance Farm.
@@ -17,10 +18,8 @@ import "./tokens/CDP.sol";
 contract FoxFarm is CDP, Nonzero {
     using SafeERC20 for IERC20;
 
-    IERC20 internal immutable _stableToken;
+    IFOX internal immutable _stableToken;
     IERC20 private immutable _shareToken;
-
-    //============ Modifiers ============//
 
     //============ Initialize ============//
 
@@ -53,125 +52,127 @@ contract FoxFarm is CDP, Nonzero {
         nonzeroAddress(stableToken_)
     {
         _shareToken = IERC20(shareToken_);
-        _stableToken = IERC20(stableToken_);
+        _stableToken = IFOX(stableToken_);
     }
 
     //============ View Functions ============//
 
-    //============ Liquidation ============//
-
-    // TODO: Fast liquidation
-    // when touch 100% collateral backing level
-
-    //============ Coupon ============//
-
-    // TODO: pair annihilation between SIN and NIS
-
-    //============ FOX Operations (+override) ============//
-
-    // TODO: Price
-    // 1 ether * (DENOMINATOR - trustLevel) / DENOMINATOR == 1 ether * maxLTV / DENOMINATOR;
-
-    //============ Recallateralize ============//
-
-    function recollateralizeBorrowDebt() external whenNotPaused {}
-
-    function recollateralizeDepositCollateral() external whenNotPaused {}
-
-    //============ Buyback ============//
-
-    function buybackRepayDebt() external whenNotPaused {}
-
-    function buybackWithdrawCollateral() external whenNotPaused {}
-
-    function buybackCoupon() external whenNotPaused {}
-
     //============ CDP Operations (+override) ============//
-
-    // open
-    // openAndDeposit
-    // close
-    // deposit
-    // withdraw
-
-    // openAndDepositAndBorrow
-    // depositAndBorrow
-
-    /**
-     * @notice Borrows `amount_` debts.
-     * @param id_ CDP number.
-     * @param amount_ of FOX.
-     */
-    function borrow(uint256 id_, uint256 amount_)
-        external
-        override
-        whenNotPaused
-    {
-        _update(id_);
-        _borrow(_msgSender(), id_, amount_); // now contract has SINs.
-        uint256 foxsAmount = requiredFoxs(); // get FOXS.
-        _stableToken.safeTransferFrom(_msgSender(), address(this), foxsAmount);
-    }
-
-    /**
-     * @notice Repays `amount_` debts.
-     */
-    function repay(uint256 id_, uint256 amount_)
-        external
-        override
-        whenNotPaused
-    {}
-
-    //============ Internal Functions (+override) ============//
-
-    function requiredFoxs() public returns (uint256) {}
 
     function _borrow(
         address account_,
         uint256 id_,
-        uint256 amount_
+        uint256 amount_ // stableAmount
     ) internal override {
-        CollateralizedDebtPosition storage _cdp = cdps[id_];
-
-        require(
-            _isApprovedOrOwner(account_, id_),
-            "FoxCDP::_borrow: Not a valid caller."
+        uint256 debtAmount_ = _stableToken.requiredDebtAmountFromStable(
+            amount_
+        );
+        uint256 shareAmount_ = _stableToken.requiredShareAmountFromStable(
+            amount_
         );
 
-        _cdp.debt += amount_;
-        // ISIN(address(_debtToken)).mintTo(account_, amount_);
-        ISIN(address(_debtToken)).mintTo(address(this), amount_); // save SINs here
-
-        require(isSafe(id_), "FoxCDP::_borrow: CDP operation exceeds max LTV.");
-        require(
-            _debtToken.totalSupply() <= cap,
-            "FoxCDP::_borrow: Cannot borrow SIN anymore."
-        );
-
-        emit Borrow(account_, id_, amount_);
+        super._borrow(account_, id_, debtAmount_);
+        _stableToken.mint(account_, debtAmount_, shareAmount_);
     }
 
     function _repay(
         address account_,
         uint256 id_,
-        uint256 amount_
+        uint256 amount_ // stableAmount
     ) internal override {
-        CollateralizedDebtPosition storage _cdp = cdps[id_];
-
-        // repay fee first
-        if (_cdp.fee >= amount_) {
-            _cdp.fee -= amount_;
-            // _debtToken.safeTransferFrom(account_, _feeTo, amount_);
-            _debtToken.safeTransfer(_feeTo, amount_);
-        } else if (_cdp.fee != 0) {
-            // _debtToken.safeTransferFrom(account_, _feeTo, _cdp.fee);
-            _debtToken.safeTransfer(_feeTo, _cdp.fee);
-            _cdp.debt -= (amount_ - _cdp.fee);
-            // ISIN(address(_debtToken)).burnFrom(account_, amount_ - _cdp.fee);
-            ISIN(address(_debtToken)).burn(amount_ - _cdp.fee);
-            _cdp.fee = 0;
-        }
-
-        emit Repay(account_, id_, amount_);
+        (uint256 debtAmount_, ) = _stableToken.redeem(account_, amount_);
+        super._repay(account_, id_, debtAmount_);
     }
+
+    //============ FOX Operations (+override) ============//
+
+    function recollateralizeBorrowDebt(
+        address account_,
+        uint256 id_,
+        uint256 amount_
+    )
+        external
+        whenNotPaused
+        onlyCdpApprovedOrOwner(_msgSender(), id_)
+        returns (uint256 shareAmount_, uint256 bonusAmount_)
+    {
+        _update(id_);
+        _borrow(_msgSender(), id_, amount_);
+
+        (shareAmount_, bonusAmount_) = _stableToken.recollateralize(
+            account_,
+            amount_
+        );
+    }
+
+    function recollateralizeDepositCollateral(
+        address account_,
+        uint256 id_,
+        uint256 amount_
+    )
+        external
+        whenNotPaused
+        returns (uint256 shareAmount_, uint256 bonusAmount_)
+    {
+        uint256 _currentLTV = currentLTV(id_);
+
+        _deposit(_msgSender(), id_, amount_);
+        _update(id_);
+
+        uint256 borrowAmount_ = borrowAmountToLTV(id_, _currentLTV);
+        _borrow(_msgSender(), id_, borrowAmount_);
+
+        (shareAmount_, bonusAmount_) = _stableToken.recollateralize(
+            account_,
+            borrowAmount_
+        );
+    }
+
+    function buybackRepayDebt(
+        address account_,
+        uint256 id_,
+        uint256 amount_
+    ) external whenNotPaused returns (uint256 debtAmount_) {
+        debtAmount_ = _stableToken.buyback(account_, amount_);
+
+        _update(id_);
+        _repay(_msgSender(), id_, debtAmount_);
+    }
+
+    function buybackWithdrawCollateral(
+        address account_,
+        uint256 id_,
+        uint256 amount_
+    )
+        external
+        whenNotPaused
+        onlyCdpApprovedOrOwner(_msgSender(), id_)
+        returns (uint256 debtAmount_)
+    {
+        debtAmount_ = _stableToken.buyback(account_, amount_);
+
+        uint256 _currentLTV = currentLTV(id_);
+
+        _update(id_);
+        _repay(_msgSender(), id_, debtAmount_);
+
+        uint256 withdrawAmount_ = withdrawAmountToLTV(id_, _currentLTV);
+        _withdraw(_msgSender(), id_, withdrawAmount_);
+    }
+
+    //============ Coupon ============//
+
+    function buybackCoupon(address account_, uint256 id_)
+        external
+        whenNotPaused
+        returns (uint256 debtAmount_)
+    {}
+
+    // TODO: pair annihilation between SIN and NIS
+
+    //============ Liquidation ============//
+
+    // TODO: Fast liquidation
+    // when touch 100% collateral backing level
+    // 1 ether * (DENOMINATOR - trustLevel) / DENOMINATOR == 1 ether * maxLTV / DENOMINATOR;
 }

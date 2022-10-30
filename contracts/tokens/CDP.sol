@@ -47,6 +47,16 @@ abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
     mapping(uint256 => CollateralizedDebtPosition) public cdps;
     uint256 public id;
 
+    //============ Modifiers ============//
+
+    modifier onlyCdpApprovedOrOwner(address msgSender, uint256 id_) {
+        require(
+            _isApprovedOrOwner(msgSender, id_),
+            "CDP::_borrow: Not a valid caller."
+        );
+        _;
+    }
+
     //============ Initialize ============//
 
     constructor(
@@ -146,6 +156,32 @@ abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
             (_cdp.collateral * _collateralPrice);
     }
 
+    function borrowAmountToLTV(uint256 id_, uint256 multipliedLtv_)
+        public
+        view
+        virtual
+        returns (uint256 debtAmount_)
+    {
+        CollateralizedDebtPosition memory _cdp = cdps[id_];
+        debtAmount_ =
+            (_cdp.collateral * _collateralPrice * multipliedLtv_) /
+            (_DENOMINATOR * _DENOMINATOR) -
+            _cdp.debt;
+    }
+
+    function withdrawAmountToLTV(uint256 id_, uint256 multipliedLtv_)
+        public
+        view
+        virtual
+        returns (uint256 collateralAmount_)
+    {
+        CollateralizedDebtPosition memory _cdp = cdps[id_];
+        collateralAmount_ =
+            _cdp.collateral -
+            (_cdp.debt * _DENOMINATOR * _DENOMINATOR) /
+            (multipliedLtv_ * _collateralPrice);
+    }
+
     /**
      *@dev multiplied by _DENOMINATOR.
      */
@@ -207,17 +243,13 @@ abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
     /**
      * @notice Closes the `id_` CDP position.
      */
-    function close(uint256 id_) external whenNotPaused {
+    function close(uint256 id_)
+        external
+        whenNotPaused
+        onlyCdpApprovedOrOwner(_msgSender(), id_)
+    {
         _update(id_);
-
-        address msgSender = _msgSender();
-
-        require(
-            _isApprovedOrOwner(msgSender, id_),
-            "CDP::_close: Not a valid caller."
-        );
-
-        _close(msgSender, id_);
+        _close(_msgSender(), id_);
     }
 
     /**
@@ -236,50 +268,35 @@ abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
         uint256 id_,
         uint256 depositAmount_,
         uint256 borrowAmount_
-    ) external whenNotPaused {
-        address msgSender = _msgSender();
-
-        _deposit(msgSender, id_, depositAmount_);
+    ) external whenNotPaused onlyCdpApprovedOrOwner(_msgSender(), id_) {
+        _deposit(_msgSender(), id_, depositAmount_);
         _update(id_);
 
-        require(
-            _isApprovedOrOwner(msgSender, id_),
-            "CDP::_borrow: Not a valid caller."
-        );
-
-        _borrow(msgSender, id_, borrowAmount_);
+        _borrow(_msgSender(), id_, borrowAmount_);
     }
 
     /**
      * @notice Withdraws collateral from `this` to `_msgSender()`.
      */
-    function withdraw(uint256 id_, uint256 amount_) external whenNotPaused {
+    function withdraw(uint256 id_, uint256 amount_)
+        external
+        whenNotPaused
+        onlyCdpApprovedOrOwner(_msgSender(), id_)
+    {
         _update(id_);
-
-        address msgSender = _msgSender();
-
-        require(
-            _isApprovedOrOwner(msgSender, id_),
-            "CDP::_withdraw: Not a valid caller."
-        );
-
-        _withdraw(msgSender, id_, amount_);
+        _withdraw(_msgSender(), id_, amount_);
     }
 
     /**
      * @notice Borrows `amount_` debts.
      */
-    function borrow(uint256 id_, uint256 amount_) external whenNotPaused {
+    function borrow(uint256 id_, uint256 amount_)
+        external
+        whenNotPaused
+        onlyCdpApprovedOrOwner(_msgSender(), id_)
+    {
         _update(id_);
-
-        address msgSender = _msgSender();
-
-        require(
-            _isApprovedOrOwner(msgSender, id_),
-            "CDP::_borrow: Not a valid caller."
-        );
-
-        _borrow(msgSender, id_, amount_);
+        _borrow(_msgSender(), id_, amount_);
     }
 
     /**
@@ -288,6 +305,17 @@ abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
     function repay(uint256 id_, uint256 amount_) external whenNotPaused {
         _update(id_);
         _repay(_msgSender(), id_, amount_);
+    }
+
+    function repayAndWithdraw(
+        uint256 id_,
+        uint256 repayAmount_,
+        uint256 withdrawAmount_
+    ) external whenNotPaused {
+        _update(id_);
+        _repay(_msgSender(), id_, repayAmount_);
+
+        _withdraw(_msgSender(), id_, withdrawAmount_);
     }
 
     // TODO: auction
