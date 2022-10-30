@@ -43,11 +43,22 @@ abstract contract abstractSIN is ISIN, Allowlist, ERC20, Ownable {
 
     //============ Lock ============//
 
-    function _beforeTokenTransfer(
+    function transfer(address to, uint256 amount)
+        public
+        override
+        onlyAllowlist
+        returns (bool)
+    {
+        return super.transfer(to, amount);
+    }
+
+    function transferFrom(
         address from,
         address to,
         uint256 amount
-    ) internal override onlyAllowlist {}
+    ) public override onlyAllowlist returns (bool) {
+        return super.transferFrom(from, to, amount);
+    }
 }
 
 /**
