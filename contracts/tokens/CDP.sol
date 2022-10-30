@@ -47,8 +47,6 @@ abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
     mapping(uint256 => CollateralizedDebtPosition) public cdps;
     uint256 public id;
 
-    //============ Modifiers ============//
-
     //============ Initialize ============//
 
     constructor(

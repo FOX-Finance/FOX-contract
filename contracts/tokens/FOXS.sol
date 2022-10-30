@@ -6,77 +6,21 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Capped.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+import "../interfaces/IFOXS.sol";
+
 /**
  * @title FOX Share (FOXS)
  * @author Luke Park (lukepark327@gmail.com)
  * @notice Users can deposit FOXS and FOXS-USDC LP into this contract
  * to earn newly minted FOXS.
  */
-contract FOXS is ERC20Capped, Ownable {
+contract FOXS is IFOXS, ERC20Capped, Ownable {
     using SafeERC20 for IERC20;
 
-    event AddPool(
-        uint256 indexed pid,
-        uint256 allocPoint,
-        IERC20 indexed token
-    );
-    event SetPool(uint256 indexed pid, uint256 allocPoint);
-    event Update(
-        uint256 indexed pid,
-        uint256 lastRewardBlock,
-        uint256 totalDeposited,
-        uint256 accTokenPerShare
-    );
-    event Deposit(
-        address indexed user,
-        uint256 indexed pid,
-        uint256 amount,
-        address indexed to
-    );
-    event Withdraw(
-        address indexed user,
-        uint256 indexed pid,
-        uint256 amount,
-        address indexed to
-    );
-    event Harvest(
-        address indexed user,
-        uint256 indexed pid,
-        uint256 amount,
-        address indexed to
-    );
-    event EmergencyWithdraw(
-        address indexed user,
-        uint256 indexed pid,
-        uint256 amount,
-        address indexed to
-    );
+    //============ Params ============//
 
     uint256 public constant TOKEN_PER_BLOCK = 1 * 1e18;
     uint256 private constant ACC_TOKEN_PRECISION = 1e12;
-
-    constructor() ERC20Capped(1_000_000_000 * 1e18) ERC20("FOX Share", "FOXS") {
-        // _mint(_msgSender(), 1_000_000_000 * 1e18); // TODO
-    }
-
-    function mint(address account, uint256 amount) external onlyOwner {
-        _mint(account, amount);
-    }
-
-    // TODO: function burn() external public {}
-
-    //============ MasterChef ============//
-
-    struct UserInfo {
-        uint256 amount;
-        int256 rewardDebt;
-    }
-
-    struct PoolInfo {
-        uint128 accTokenPerShare;
-        uint64 lastRewardBlock;
-        uint64 allocPoint;
-    }
 
     /// @notice Info of each user that stakes tokens.
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
@@ -90,6 +34,22 @@ contract FOXS is ERC20Capped, Ownable {
     /// @dev Total allocation points.
     /// Must be the sum of all allocation points in all pools.
     uint256 public totalAllocPoint;
+
+    //============ Initialize ============//
+
+    constructor() ERC20Capped(1_000_000_000 * 1e18) ERC20("FOX Share", "FOXS") {
+        // _mint(_msgSender(), 1_000_000_000 * 1e18); // TODOL initial distribution
+    }
+
+    //============ ERC20-related Functions ============//
+
+    function mint(address account, uint256 amount) external onlyOwner {
+        _mint(account, amount);
+    }
+
+    // TODO: function burn() external public {}
+
+    //============ MasterChef ============//
 
     /// @notice Returns the number of pools.
     function poolLength() public view returns (uint256 pools) {

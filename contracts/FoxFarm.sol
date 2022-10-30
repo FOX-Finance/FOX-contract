@@ -56,8 +56,6 @@ contract FoxFarm is CDP, Nonzero {
         _stableToken = IERC20(stableToken_);
     }
 
-    //============ Owner ============//
-
     //============ View Functions ============//
 
     //============ Liquidation ============//

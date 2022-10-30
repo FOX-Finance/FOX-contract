@@ -31,12 +31,12 @@ contract FOX is
     Ownable
 {
     using SafeERC20 for IERC20;
-    using SafeERC20 for IFOXS;
+    using SafeERC20 for IERC20;
 
     //============ Params ============//
 
     IERC20 private immutable _debtToken;
-    IFOXS private immutable _shareToken;
+    IERC20 private immutable _shareToken;
 
     uint256 private constant _TARGET_PRICE = 10000; // $1
     uint256 private _stablePrice = _TARGET_PRICE;
@@ -58,15 +58,6 @@ contract FOX is
     uint256 private _burnFeeRatio; // (feeRatio / _DENOMINATOR)
 
     uint256 private _bonusRatio; // recollateralization bonus
-
-    //============ Events ============//
-
-    event SetFeeTo(address prevFeeTo, address currFeeTo);
-    event SetMintFeeRatio(uint256 prevMintFeeRatio, uint256 currMintFeeRatio);
-    event SetBurnFeeRatio(uint256 prevBurnFeeRatio, uint256 currBurnFeeRatio);
-    event SetBonusRatio(uint256 prevBonusRatio, uint256 currBonusRatio);
-
-    //============ Modifiers ============//
 
     //============ Initialize ============//
 
@@ -432,7 +423,7 @@ contract FOX is
 
         // receive
         _shareToken.safeTransfer(toAccount_, shareAmount_);
-        _shareToken.mint(toAccount_, shareAmount_);
+        IFOXS(address(_shareToken)).mint(toAccount_, shareAmount_);
     }
 
     function buyback(address toAccount_, uint256 shareAmount_)
@@ -463,6 +454,15 @@ contract FOX is
 
         // receive
         _debtToken.safeTransfer(toAccount_, debtAmount_);
+    }
+
+    // TODO: can get surplus FOXS
+    function skim(address toAccount_)
+        external
+        whenNotPaused
+        returns (uint256 shareAmount_)
+    {
+
     }
 
     //============ ERC20-related Functions ============//

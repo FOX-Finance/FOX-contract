@@ -11,15 +11,6 @@ contract Oracle is IOracle, Context {
 
     address private _oracleFeeder;
 
-    //============ Events ============//
-
-    event UpdateOracleFeeder(address prevOracleFeeder, address currOracle);
-    event UpdatePrice(
-        address indexed token,
-        uint256 prevPrice,
-        uint256 currPrice
-    );
-
     //============ Modifiers ============//
 
     modifier onlyOracleFeeder() {

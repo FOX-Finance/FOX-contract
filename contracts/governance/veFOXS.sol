@@ -5,11 +5,12 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20VotesComp.sol";
 
-contract veFOXS is ERC20VotesComp {
+import "../interfaces/IveFOXS.sol";
+
+contract veFOXS is IveFOXS, ERC20VotesComp {
     using SafeERC20 for IERC20;
 
-    event Deposit(address indexed from_, uint256 amount_, uint256 expiration_);
-    event Withdraw(address indexed to_, uint256 amount_, uint256 blockNumber_);
+    //============ Params ============//
 
     /// @notice The number of blocks to represent 1 day.
     uint256 private constant ONE_DAY_BLOCKS = 86400 / 3; // blocks
@@ -23,16 +24,12 @@ contract veFOXS is ERC20VotesComp {
     /// @notice The number of blocks to represent 1 year.
     uint256 private constant ONE_YEAR_BLOCKS = ONE_DAY_BLOCKS * 360; // blocks
 
-    struct Stake {
-        uint256 collateral; // FOXS
-        uint256 debt; // veFOXS
-        uint256 expiration;
-    }
-
     /// @notice Stores the amount and the expiration of account.
     mapping(address => Stake) public stakes;
 
     IERC20 public foxs;
+
+    //============ Initialize ============//
 
     constructor(address foxs_)
         ERC20("vote-escrowed FOX Share", "veFOXS")
@@ -40,6 +37,8 @@ contract veFOXS is ERC20VotesComp {
     {
         foxs = IERC20(foxs_);
     }
+
+    //============ Functions ============//
 
     /// @notice Deposits FOXS and mints veFOXS.
     /// @param amount Amount of FOXS to stake.
@@ -100,5 +99,17 @@ contract veFOXS is ERC20VotesComp {
         foxs.safeTransfer(msgSender, stake.collateral);
 
         emit Withdraw(msgSender, stake.collateral, block.number);
+    }
+
+    //============ View Functions ============//
+
+    function getPriorVotes(address account, uint256 blockNumber)
+        external
+        view
+        override(ERC20VotesComp, IveFOXS)
+        returns (uint96)
+    {
+        // ERC20VotesComp
+        return SafeCast.toUint96(getPastVotes(account, blockNumber));
     }
 }
