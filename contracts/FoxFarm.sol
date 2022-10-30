@@ -2,12 +2,10 @@
 
 pragma solidity 0.8.9;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
 import "./utils/Nonzero.sol";
 import "./tokens/CDP.sol";
 import "./interfaces/IFOX.sol";
+import "./interfaces/ICoupon.sol";
 
 /**
  * @title FOX Finance Farm.
@@ -16,10 +14,8 @@ import "./interfaces/IFOX.sol";
  * Also it is treasury of collaterals-WETHs- and SINs.
  */
 contract FoxFarm is CDP, Nonzero {
-    using SafeERC20 for IERC20;
-
     IFOX internal immutable _stableToken;
-    IERC20 private immutable _shareToken;
+    ICoupon internal immutable _coupon;
 
     //============ Initialize ============//
 
@@ -28,8 +24,8 @@ contract FoxFarm is CDP, Nonzero {
         address feeTo_,
         address collateralToken_, // WETH
         address debtToken_, // SIN
-        address shareToken_, // FOXS
         address stableToken_, // FOX
+        address coupon_,
         uint256 maxLTV_,
         uint256 cap_,
         uint256 feeRatio_ // stability fee
@@ -37,6 +33,7 @@ contract FoxFarm is CDP, Nonzero {
         nonzeroAddress(oracleFeeder_)
         nonzeroAddress(collateralToken_)
         nonzeroAddress(debtToken_)
+        nonzeroAddress(coupon_)
         CDP(
             "FoxFarm",
             "FOXCDP",
@@ -48,16 +45,15 @@ contract FoxFarm is CDP, Nonzero {
             cap_,
             feeRatio_
         )
-        nonzeroAddress(shareToken_)
         nonzeroAddress(stableToken_)
     {
-        _shareToken = IERC20(shareToken_);
         _stableToken = IFOX(stableToken_);
+        _coupon = ICoupon(coupon_);
     }
 
     //============ View Functions ============//
 
-    //============ CDP Operations (+override) ============//
+    //============ CDP Internal Operations (override) ============//
 
     function _borrow(
         address account_,
@@ -84,7 +80,7 @@ contract FoxFarm is CDP, Nonzero {
         super._repay(account_, id_, debtAmount_);
     }
 
-    //============ FOX Operations (+override) ============//
+    //============ FOX Operations ============//
 
     function recollateralizeBorrowDebt(
         address account_,
@@ -160,6 +156,12 @@ contract FoxFarm is CDP, Nonzero {
         _withdraw(_msgSender(), id_, withdrawAmount_);
     }
 
+    //============ Liquidation ============//
+
+    // TODO: Fast liquidation
+    // when touch 100% collateral backing level
+    // 1 ether * (DENOMINATOR - trustLevel) / DENOMINATOR == 1 ether * maxLTV / DENOMINATOR;
+
     //============ Coupon ============//
 
     function buybackCoupon(address account_, uint256 id_)
@@ -169,10 +171,4 @@ contract FoxFarm is CDP, Nonzero {
     {}
 
     // TODO: pair annihilation between SIN and NIS
-
-    //============ Liquidation ============//
-
-    // TODO: Fast liquidation
-    // when touch 100% collateral backing level
-    // 1 ether * (DENOMINATOR - trustLevel) / DENOMINATOR == 1 ether * maxLTV / DENOMINATOR;
 }

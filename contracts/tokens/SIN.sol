@@ -10,7 +10,7 @@ import "../utils/Nonzero.sol";
 
 import "../interfaces/ISIN.sol";
 
-abstract contract abstractSIN is ISIN, Allowlist, ERC20, Ownable {
+abstract contract abstractSIN is ISIN, ERC20, Ownable, Allowlist {
     function approveMax(address spender) public {
         _approve(_msgSender(), spender, type(uint256).max);
     }

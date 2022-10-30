@@ -9,7 +9,6 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "../oracle/Oracle.sol";
-import "../utils/Interval.sol";
 import "../interfaces/ISIN.sol";
 
 import "../interfaces/ICDP.sol";
@@ -22,7 +21,7 @@ import "../interfaces/ICDP.sol";
  * @notice Gets WETH as collateral, gives SIN as debt.
  * @dev Abstract contract.
  */
-abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
+abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     using SafeERC20 for IERC20;
 
     //============ Params ============//
@@ -38,21 +37,22 @@ abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
     uint256 public maxLTV; // (maxLTV / _DENOMINATOR)
     uint256 public cap; // total debt cap
 
-    uint256 private constant _TIME_PERIOD = 1 hours;
-
     address internal _feeTo;
     uint256 internal _feeRatio; // (_feeRatio / _DENOMINATOR) // stability fee
 
     // CDP
     mapping(uint256 => CollateralizedDebtPosition) public cdps;
     uint256 public id;
+    uint256 public totalCollateral; // TODO: for coupon
+    uint256 public totalDebt; // TODO: for coupon
+    uint256 public totalFee; // TODO: for coupon
 
     //============ Modifiers ============//
 
     modifier onlyCdpApprovedOrOwner(address msgSender, uint256 id_) {
         require(
             _isApprovedOrOwner(msgSender, id_),
-            "CDP::_borrow: Not a valid caller."
+            "CDP::onlyCdpApprovedOrOwner: Not a valid caller."
         );
         _;
     }
@@ -73,10 +73,8 @@ abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
         _feeTo = feeTo_; // can be zero address
         _collateralToken = IERC20(collateralToken_);
         _debtToken = IERC20(debtToken_);
-
         maxLTV = maxLTV_;
         cap = cap_;
-
         _feeRatio = feeRatio_;
     }
 
@@ -156,6 +154,21 @@ abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
             (_cdp.collateral * _collateralPrice);
     }
 
+    /**
+     *@dev multiplied by _DENOMINATOR.
+     */
+    function healthFactor(uint256 id_)
+        public
+        view
+        virtual
+        returns (uint256 health)
+    {
+        CollateralizedDebtPosition memory _cdp = cdps[id_];
+        health =
+            (_cdp.debt * _DENOMINATOR * _DENOMINATOR * _DENOMINATOR) /
+            (_cdp.collateral * _collateralPrice * maxLTV);
+    }
+
     function borrowAmountToLTV(uint256 id_, uint256 multipliedLtv_)
         public
         view
@@ -182,27 +195,12 @@ abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
             (multipliedLtv_ * _collateralPrice);
     }
 
-    /**
-     *@dev multiplied by _DENOMINATOR.
-     */
-    function healthFactor(uint256 id_)
-        public
-        view
-        virtual
-        returns (uint256 health)
-    {
-        CollateralizedDebtPosition memory _cdp = cdps[id_];
-        health =
-            (_cdp.debt * _DENOMINATOR * _DENOMINATOR * _DENOMINATOR) /
-            (_cdp.collateral * _collateralPrice * maxLTV);
-    }
-
     //============ CDP Operations ============//
 
     /**
      * @notice Opens a CDP position.
      */
-    function open() external whenNotPaused returns (uint256 id_) {
+    function open() external virtual whenNotPaused returns (uint256 id_) {
         id_ = _open(_msgSender());
         _update(id_);
     }
@@ -217,6 +215,7 @@ abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
      */
     function openAndDeposit(uint256 amount_)
         external
+        virtual
         whenNotPaused
         returns (uint256 id_)
     {

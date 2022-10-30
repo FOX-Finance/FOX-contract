@@ -22,13 +22,13 @@ import "../interfaces/IFOX.sol";
  */
 contract FOX is
     IFOX,
+    ERC20,
+    Pausable,
+    Ownable,
     Oracle,
     Allowlist,
     Interval,
-    Nonzero,
-    ERC20,
-    Pausable,
-    Ownable
+    Nonzero
 {
     using SafeERC20 for IERC20;
     using SafeERC20 for IERC20;

@@ -202,12 +202,15 @@ TBD
 ---
 
 # TODO
+- [ ] Moralis
 - [ ] Axelar
 - [ ] solidity-docgen
 - [ ] Docusaurus
 - [ ] CI/CD
+- [ ] Check additional conditions: total ratio, cdp ratio, 100% upper bound
 
 # Roadmap
 - [ ] BNB liquid staking -> stBNB as collateral
 - [ ] LP as collateral
+- [ ] NFT Market & Auction
 -->
