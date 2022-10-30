@@ -20,6 +20,8 @@ contract FoxFarm is CDP, Nonzero {
     IERC20 internal immutable _stableToken;
     IERC20 private immutable _shareToken;
 
+    //============ Modifiers ============//
+
     //============ Initialize ============//
 
     constructor(
@@ -31,8 +33,9 @@ contract FoxFarm is CDP, Nonzero {
         address stableToken_, // FOX
         uint256 maxLTV_,
         uint256 cap_,
-        uint256 feeRatio_
+        uint256 feeRatio_ // stability fee
     )
+        nonzeroAddress(oracleFeeder_)
         nonzeroAddress(collateralToken_)
         nonzeroAddress(debtToken_)
         CDP(
@@ -53,13 +56,11 @@ contract FoxFarm is CDP, Nonzero {
         _stableToken = IERC20(stableToken_);
     }
 
+    //============ Owner ============//
+
     //============ View Functions ============//
 
     //============ Liquidation ============//
-
-    function liquidate() external {}
-
-    function globalLiquidate() external {}
 
     // TODO: Fast liquidation
     // when touch 100% collateral backing level
@@ -95,7 +96,6 @@ contract FoxFarm is CDP, Nonzero {
     // deposit
     // withdraw
 
-    // TODO
     // openAndDepositAndBorrow
     // depositAndBorrow
 

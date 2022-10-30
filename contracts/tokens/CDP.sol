@@ -151,7 +151,12 @@ abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
     /**
      *@dev multiplied by _DENOMINATOR.
      */
-    function healthFactor(uint256 id_) public view virtual returns (uint256 health) {
+    function healthFactor(uint256 id_)
+        public
+        view
+        virtual
+        returns (uint256 health)
+    {
         CollateralizedDebtPosition memory _cdp = cdps[id_];
         health =
             (_cdp.debt * _DENOMINATOR * _DENOMINATOR * _DENOMINATOR) /
@@ -194,7 +199,15 @@ abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
      */
     function close(uint256 id_) external virtual whenNotPaused {
         _update(id_);
-        _close(_msgSender(), id_);
+
+        address msgSender = _msgSender();
+
+        require(
+            _isApprovedOrOwner(msgSender, id_),
+            "CDP::_close: Not a valid caller."
+        );
+
+        _close(msgSender, id_);
     }
 
     /**
@@ -224,7 +237,15 @@ abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
         whenNotPaused
     {
         _update(id_);
-        _withdraw(_msgSender(), id_, amount_);
+
+        address msgSender = _msgSender();
+
+        require(
+            _isApprovedOrOwner(msgSender, id_),
+            "CDP::_withdraw: Not a valid caller."
+        );
+
+        _withdraw(msgSender, id_, amount_);
     }
 
     /**
@@ -236,7 +257,15 @@ abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
         whenNotPaused
     {
         _update(id_);
-        _borrow(_msgSender(), id_, amount_);
+
+        address msgSender = _msgSender();
+
+        require(
+            _isApprovedOrOwner(msgSender, id_),
+            "CDP::_borrow: Not a valid caller."
+        );
+
+        _borrow(msgSender, id_, amount_);
     }
 
     /**
@@ -262,9 +291,17 @@ abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
         return _update(id_);
     }
 
-    // TODO: liquidation (based on `isSafe()`)
+    // TODO: auction
+    function liquidate(uint256 id_) external {
+        _update(id_);
 
-    // TODO: global liquidation (onlyOwner)
+        require(!isSafe(id_), "CDP::liquidate: CDP must be unsafe.");
+
+        _close(_msgSender(), id_);
+    }
+
+    // TODO
+    function globalLiquidate() external onlyOwner whenPaused {}
 
     //============ Internal Functions ============//
 
@@ -282,11 +319,6 @@ abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
     function _close(address account_, uint256 id_) internal {
         CollateralizedDebtPosition storage _cdp = cdps[id_];
 
-        require(
-            _isApprovedOrOwner(account_, id_),
-            "CDP::_close: Not a valid caller."
-        );
-
         if (_cdp.debt != 0) {
             _repay(account_, id_, _cdp.debt + _cdp.fee);
         }
@@ -294,6 +326,7 @@ abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
             _withdraw(account_, id_, _cdp.collateral);
         }
 
+        _burn(id_);
         delete cdps[id_];
 
         emit Close(account_, id_);
@@ -326,11 +359,6 @@ abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
     ) internal {
         CollateralizedDebtPosition storage _cdp = cdps[id_];
 
-        require(
-            _isApprovedOrOwner(account_, id_),
-            "CDP::_withdraw: Not a valid caller."
-        );
-
         _cdp.collateral -= amount_;
         _collateralToken.safeTransfer(account_, amount_);
 
@@ -349,11 +377,6 @@ abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
         uint256 amount_
     ) internal virtual {
         CollateralizedDebtPosition storage _cdp = cdps[id_];
-
-        require(
-            _isApprovedOrOwner(account_, id_),
-            "CDP::_borrow: Not a valid caller."
-        );
 
         _cdp.debt += amount_;
         ISIN(address(_debtToken)).mintTo(account_, amount_);

@@ -11,6 +11,7 @@ import "../oracle/Oracle.sol";
 import "../utils/Allowlist.sol";
 import "../utils/Interval.sol";
 import "../utils/Nonzero.sol";
+import "../interfaces/IFOXS.sol";
 
 import "../interfaces/IFOX.sol";
 
@@ -30,11 +31,12 @@ contract FOX is
     Ownable
 {
     using SafeERC20 for IERC20;
+    using SafeERC20 for IFOXS;
 
     //============ Params ============//
 
     IERC20 private immutable _debtToken;
-    IERC20 private immutable _shareToken;
+    IFOXS private immutable _shareToken;
 
     uint256 private constant _TARGET_PRICE = 10000; // $1
     uint256 private _stablePrice = _TARGET_PRICE;
@@ -55,11 +57,14 @@ contract FOX is
     uint256 private _mintFeeRatio; // (feeRatio / _DENOMINATOR)
     uint256 private _burnFeeRatio; // (feeRatio / _DENOMINATOR)
 
+    uint256 private _bonusRatio; // recollateralization bonus
+
     //============ Events ============//
 
     event SetFeeTo(address prevFeeTo, address currFeeTo);
     event SetMintFeeRatio(uint256 prevMintFeeRatio, uint256 currMintFeeRatio);
     event SetBurnFeeRatio(uint256 prevBurnFeeRatio, uint256 currBurnFeeRatio);
+    event SetBonusRatio(uint256 prevBonusRatio, uint256 currBonusRatio);
 
     //============ Modifiers ============//
 
@@ -71,7 +76,8 @@ contract FOX is
         address debtToken_,
         address shareToken_,
         uint256 mintFeeRatio_, // 20 as default
-        uint256 burnFeeRatio_ // 45 as default
+        uint256 burnFeeRatio_, // 45 as default
+        uint256 bonusRatio_ // 75 as default
     )
         ERC20("Fractional Over Collateralized Stablecoin", "FOX")
         nonzeroAddress(oracleFeeder_)
@@ -81,12 +87,14 @@ contract FOX is
     {
         _feeTo = feeTo_; // can be zero address
         _debtToken = IERC20(debtToken_);
-        _shareToken = IERC20(shareToken_);
+        _shareToken = IFOXS(shareToken_);
 
         step = _ULTRA_STEP;
 
         _mintFeeRatio = mintFeeRatio_;
         _burnFeeRatio = burnFeeRatio_;
+
+        _bonusRatio = bonusRatio_;
     }
 
     //============ Owner ============//
@@ -103,10 +111,16 @@ contract FOX is
         emit SetMintFeeRatio(prevMintFeeRatio, _mintFeeRatio);
     }
 
-    function setBunrFeeRatio(uint256 newBunrFeeRatio) external onlyOwner {
+    function setBurnFeeRatio(uint256 newBunrFeeRatio) external onlyOwner {
         uint256 prevBunrFeeRatio = _burnFeeRatio;
         _burnFeeRatio = newBunrFeeRatio;
         emit SetBurnFeeRatio(prevBunrFeeRatio, _burnFeeRatio);
+    }
+
+    function setBonusRatio(uint256 newBonusRatio) external onlyOwner {
+        uint256 prevBonusRatio = _bonusRatio;
+        _bonusRatio = newBonusRatio;
+        emit SetBonusRatio(prevBonusRatio, _bonusRatio);
     }
 
     function addAllowlist(address newAddr) external onlyOwner {
@@ -179,7 +193,7 @@ contract FOX is
     }
 
     function _updateTrustLevel() internal interval(_TIME_PERIOD) {
-        if (trust() < 0) {
+        if (deltaTrust() < 0) {
             trustLevel -= step;
         } else {
             trustLevel += step;
@@ -210,14 +224,24 @@ contract FOX is
         return _sharePrice;
     }
 
+    function currentTrustLevel() public view returns (uint256) {
+        return
+            (_debtToken.balanceOf(address(this)) * _DENOMINATOR) /
+            totalSupply();
+    }
+
     /**
      * @notice Returns error of stablecoin price.
-     * @dev Over-trusted when `trust()` > 0.
-     * Under-trusted when `trust()` < 0.
-     * Neutal-trusted when `trust()` == 0.
+     * @dev Over-trusted when `deltaTrust()` > 0.
+     * Under-trusted when `deltaTrust()` < 0.
+     * Neutal-trusted when `deltaTrust()` == 0.
      */
-    function trust() public view returns (int256) {
+    function deltaTrust() public view returns (int256) {
         return int256(_stablePrice - _TARGET_PRICE);
+    }
+
+    function deltaTrustLevel() public view returns (int256) {
+        return int256(currentTrustLevel() - trustLevel);
     }
 
     function requiredShareAmountFromDebt(uint256 debtAmount_)
@@ -288,6 +312,40 @@ contract FOX is
         shareAmount_ = requiredShareAmountFromStable(stableAmount_);
     }
 
+    function shortfallRecollateralizeAmount()
+        public
+        view
+        returns (uint256 debtAmount_)
+    {
+        return
+            (totalSupply() * (_DENOMINATOR - trustLevel)) /
+            _DENOMINATOR -
+            _debtToken.balanceOf(address(this));
+    }
+
+    function surplusBuybackAmount() public view returns (uint256 debtAmount_) {
+        return
+            _debtToken.balanceOf(address(this)) -
+            (totalSupply() * (_DENOMINATOR - trustLevel)) /
+            _DENOMINATOR;
+    }
+
+    function exchangedShareAmountFromDebt(uint256 debtAmount_)
+        public
+        view
+        returns (uint256 shareAmount_)
+    {
+        shareAmount_ = (debtAmount_ * _DENOMINATOR) / (_sharePrice);
+    }
+
+    function exchangedDebtAmountFromShare(uint256 shareAmount_)
+        public
+        view
+        returns (uint256 debtAmount_)
+    {
+        debtAmount_ = (shareAmount_ * _sharePrice) / _DENOMINATOR;
+    }
+
     //============ Mint & Redeem ============//
 
     function mint(
@@ -295,19 +353,11 @@ contract FOX is
         uint256 debtAmount_,
         uint256 shareAmount_
     ) external whenNotPaused returns (uint256 stableAmount_) {
-        address fromAccount_ = _msgSender();
+        address _fromAccount = _msgSender();
 
         // send
-        IERC20(_debtToken).safeTransferFrom(
-            fromAccount_,
-            address(this),
-            debtAmount_
-        );
-        IERC20(_shareToken).safeTransferFrom(
-            fromAccount_,
-            address(this),
-            shareAmount_
-        );
+        _debtToken.safeTransferFrom(_fromAccount, address(this), debtAmount_);
+        _shareToken.safeTransferFrom(_fromAccount, address(this), shareAmount_);
 
         // calculate
         stableAmount_ = expectedMintAmount(debtAmount_, shareAmount_);
@@ -327,33 +377,29 @@ contract FOX is
         whenNotPaused
         returns (uint256 debtAmount_, uint256 shareAmount_)
     {
-        address fromAccount_ = _msgSender();
+        address _fromAccount = _msgSender();
 
         // send
-        _burn(fromAccount_, stableAmount_);
+        _burn(_fromAccount, stableAmount_);
 
         // calculate
         (debtAmount_, shareAmount_) = expectedRedeemAmount(stableAmount_);
 
         // receive
         if (_feeTo != address(0)) {
-            IERC20(_debtToken).safeTransferFrom(
+            _debtToken.safeTransferFrom(
                 address(this),
                 toAccount_,
                 debtAmount_ - (debtAmount_ * _burnFeeRatio) / _DENOMINATOR // _feeTo
             );
-            IERC20(_shareToken).safeTransferFrom(
+            _shareToken.safeTransferFrom(
                 address(this),
                 toAccount_,
                 shareAmount_ - (shareAmount_ * _burnFeeRatio) / _DENOMINATOR // _feeTo
             );
         } else {
-            IERC20(_debtToken).safeTransferFrom(
-                address(this),
-                toAccount_,
-                debtAmount_
-            );
-            IERC20(_shareToken).safeTransferFrom(
+            _debtToken.safeTransferFrom(address(this), toAccount_, debtAmount_);
+            _shareToken.safeTransferFrom(
                 address(this),
                 toAccount_,
                 shareAmount_
@@ -361,13 +407,63 @@ contract FOX is
         }
     }
 
-    //============ Recallateralize ============//
+    //============ Recallateralize & Buyback ============//
 
-    function recollateralize() external whenNotPaused {}
+    function recollateralize(address toAccount_, uint256 debtAmount_)
+        external
+        whenNotPaused
+        returns (uint256 shareAmount_, uint256 bonusAmount_)
+    {
+        uint256 _shortfallAmount = shortfallRecollateralizeAmount(); // also checks recollateralizing condition
+        _shortfallAmount = _shortfallAmount >= debtAmount_
+            ? debtAmount_
+            : _shortfallAmount;
 
-    //============ Buyback ============//
+        // send
+        _debtToken.safeTransferFrom(
+            _msgSender(),
+            address(this),
+            _shortfallAmount
+        );
 
-    function buyback() external whenNotPaused {}
+        // calculate
+        shareAmount_ = exchangedShareAmountFromDebt(_shortfallAmount);
+        bonusAmount_ = (shareAmount_ * _bonusRatio) / _DENOMINATOR;
+
+        // receive
+        _shareToken.safeTransfer(toAccount_, shareAmount_);
+        _shareToken.mint(toAccount_, shareAmount_);
+    }
+
+    function buyback(address toAccount_, uint256 shareAmount_)
+        external
+        whenNotPaused
+        returns (uint256 debtAmount_)
+    {
+        uint256 _surplusAmount = surplusBuybackAmount(); // also checks recollateralizing condition
+        uint256 _exchangedSurplusShareAmount = exchangedShareAmountFromDebt(
+            _surplusAmount
+        );
+        _exchangedSurplusShareAmount = _exchangedSurplusShareAmount >=
+            shareAmount_
+            ? shareAmount_
+            : _exchangedSurplusShareAmount;
+
+        // send
+        _shareToken.safeTransferFrom(
+            _msgSender(),
+            address(this),
+            _exchangedSurplusShareAmount
+        );
+
+        // calculate
+        debtAmount_ = exchangedDebtAmountFromShare(
+            _exchangedSurplusShareAmount
+        );
+
+        // receive
+        _debtToken.safeTransfer(toAccount_, debtAmount_);
+    }
 
     //============ ERC20-related Functions ============//
 

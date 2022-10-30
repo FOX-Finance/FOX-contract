@@ -59,7 +59,9 @@ contract FOXS is ERC20Capped, Ownable {
         // _mint(_msgSender(), 1_000_000_000 * 1e18); // TODO
     }
 
-    // TODO: function mint() external public {}
+    function mint(address account, uint256 amount) external onlyOwner {
+        _mint(account, amount);
+    }
 
     // TODO: function burn() external public {}
 
