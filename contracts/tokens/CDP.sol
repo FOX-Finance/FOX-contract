@@ -166,7 +166,7 @@ abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
     /**
      * @notice Opens a CDP position.
      */
-    function open() external virtual whenNotPaused returns (uint256 id_) {
+    function open() external whenNotPaused returns (uint256 id_) {
         id_ = _open(_msgSender());
         _update(id_);
     }
@@ -181,21 +181,33 @@ abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
      */
     function openAndDeposit(uint256 amount_)
         external
-        virtual
         whenNotPaused
         returns (uint256 id_)
     {
-        id_ = _open(_msgSender());
-        _deposit(_msgSender(), id_, amount_);
+        address msgSender = _msgSender();
+
+        id_ = _open(msgSender);
+        _deposit(msgSender, id_, amount_);
         _update(id_);
     }
 
-    // TODO: openAndDepositAndBorrow
+    function openAndDepositAndBorrow(
+        uint256 depositAmount_,
+        uint256 borrowAmount_
+    ) external whenNotPaused returns (uint256 id_) {
+        address msgSender = _msgSender();
+
+        id_ = _open(msgSender);
+        _deposit(msgSender, id_, depositAmount_);
+        _update(id_);
+
+        _borrow(msgSender, id_, borrowAmount_);
+    }
 
     /**
      * @notice Closes the `id_` CDP position.
      */
-    function close(uint256 id_) external virtual whenNotPaused {
+    function close(uint256 id_) external whenNotPaused {
         _update(id_);
 
         address msgSender = _msgSender();
@@ -215,25 +227,33 @@ abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
      *
      * - Do `approve` first.
      */
-    function deposit(uint256 id_, uint256 amount_)
-        external
-        virtual
-        whenNotPaused
-    {
+    function deposit(uint256 id_, uint256 amount_) external whenNotPaused {
         _deposit(_msgSender(), id_, amount_);
         _update(id_);
     }
 
-    // TODO: depositAndBorrow
+    function depositAndBorrow(
+        uint256 id_,
+        uint256 depositAmount_,
+        uint256 borrowAmount_
+    ) external whenNotPaused {
+        address msgSender = _msgSender();
+
+        _deposit(msgSender, id_, depositAmount_);
+        _update(id_);
+
+        require(
+            _isApprovedOrOwner(msgSender, id_),
+            "CDP::_borrow: Not a valid caller."
+        );
+
+        _borrow(msgSender, id_, borrowAmount_);
+    }
 
     /**
      * @notice Withdraws collateral from `this` to `_msgSender()`.
      */
-    function withdraw(uint256 id_, uint256 amount_)
-        external
-        virtual
-        whenNotPaused
-    {
+    function withdraw(uint256 id_, uint256 amount_) external whenNotPaused {
         _update(id_);
 
         address msgSender = _msgSender();
@@ -249,11 +269,7 @@ abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
     /**
      * @notice Borrows `amount_` debts.
      */
-    function borrow(uint256 id_, uint256 amount_)
-        external
-        virtual
-        whenNotPaused
-    {
+    function borrow(uint256 id_, uint256 amount_) external whenNotPaused {
         _update(id_);
 
         address msgSender = _msgSender();
@@ -269,24 +285,9 @@ abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
     /**
      * @notice Repays `amount_` debts.
      */
-    function repay(uint256 id_, uint256 amount_)
-        external
-        virtual
-        whenNotPaused
-    {
+    function repay(uint256 id_, uint256 amount_) external whenNotPaused {
         _update(id_);
         _repay(_msgSender(), id_, amount_);
-    }
-
-    /**
-     * @notice Update fee.
-     */
-    function updateFee(uint256 id_)
-        external
-        virtual
-        returns (uint256 additionalFee)
-    {
-        return _update(id_);
     }
 
     // TODO: auction
@@ -300,6 +301,13 @@ abstract contract CDP is ICDP, Oracle, Interval, ERC721, Pausable, Ownable {
 
     // TODO
     function globalLiquidate() external onlyOwner whenPaused {}
+
+    /**
+     * @notice Update fee.
+     */
+    function updateFee(uint256 id_) external returns (uint256 additionalFee) {
+        return _update(id_);
+    }
 
     //============ Internal Functions ============//
 
