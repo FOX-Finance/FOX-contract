@@ -10,10 +10,8 @@ import "./tokens/CDP.sol";
 import "./interfaces/IFOX.sol";
 import "./interfaces/ICoupon.sol";
 
-library ApproveMaxERC20 {
-    function approveMax(IERC20 token, address spender) external {
-        token.approve(spender, type(uint256).max);
-    }
+interface ApproveMaxERC20 {
+    function approveMax(address spender) external;
 }
 
 /**
@@ -24,7 +22,6 @@ library ApproveMaxERC20 {
  */
 contract FoxFarm is CDP, Nonzero {
     using SafeERC20 for IERC20;
-    using ApproveMaxERC20 for IERC20;
 
     //============ Params ============//
 
@@ -72,8 +69,8 @@ contract FoxFarm is CDP, Nonzero {
     }
 
     function initialize() public {
-        _debtToken.approveMax(address(_stableToken));
-        _shareToken.approveMax(address(_stableToken));
+        ApproveMaxERC20(address(_debtToken)).approveMax(address(_stableToken));
+        ApproveMaxERC20(address(_shareToken)).approveMax(address(_stableToken));
     }
 
     //============ CDP Internal Operations (override) ============//

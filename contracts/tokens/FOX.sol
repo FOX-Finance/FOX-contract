@@ -63,8 +63,8 @@ contract FOX is
     constructor(
         address oracleFeeder_,
         address feeTo_,
-        address debtToken_,
-        address shareToken_,
+        address debtToken_, // SIN
+        address shareToken_, // FOXS
         uint256 mintFeeRatio_, // 20 as default
         uint256 burnFeeRatio_, // 45 as default
         uint256 bonusRatio_ // 75 as default
