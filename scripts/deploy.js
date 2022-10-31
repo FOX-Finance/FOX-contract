@@ -80,6 +80,11 @@ async function init() {
     txRes = await contract.fox.connect(signer.owner).addAllowlist(signer.oracleFeeder.address);
     await txRes.wait();
     console.log(" - complete");
+
+    process.stdout.write("[SIN] Change SIN's owner to FoxFarm");
+    txRes = await contract.sin.connect(signer.owner).transferOwnership(contract.foxFarm.address);
+    await txRes.wait();
+    console.log(" - complete");
 }
 
 async function main() {
