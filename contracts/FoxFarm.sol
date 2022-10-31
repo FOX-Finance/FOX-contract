@@ -10,6 +10,8 @@ import "./tokens/CDP.sol";
 import "./interfaces/IFOX.sol";
 import "./interfaces/ICoupon.sol";
 
+import "./interfaces/IFoxFarm.sol";
+
 interface ApproveMaxERC20 {
     function approveMax(address spender) external;
 }
@@ -20,7 +22,7 @@ interface ApproveMaxERC20 {
  * @notice Gets WETH as collateral and FOXS as share, gives FOX as debt.
  * Also it is treasury of collaterals-WETHs- and SINs.
  */
-contract FoxFarm is CDP, Nonzero {
+contract FoxFarm is IFoxFarm, CDP, Nonzero {
     using SafeERC20 for IERC20;
 
     //============ Params ============//
@@ -71,6 +73,37 @@ contract FoxFarm is CDP, Nonzero {
     function initialize() public {
         ApproveMaxERC20(address(_debtToken)).approveMax(address(_stableToken));
         ApproveMaxERC20(address(_shareToken)).approveMax(address(_stableToken));
+    }
+
+    //============ View Functions ============//
+
+    function requiredShareAmountFromCollateralWithLtv(
+        uint256 collateralAmount_,
+        uint256 ltv_
+    ) public view returns (uint256 shareAmount_) {
+        shareAmount_ = _stableToken.requiredShareAmountFromDebt(
+            (collateralAmount_ * ltv_) / _DENOMINATOR
+        );
+    }
+
+    function expectedMintAmountWithLtv(
+        uint256 collateralAmount_,
+        uint256 ltv_,
+        uint256 shareAmount_
+    ) public view returns (uint256 stableAmount_) {
+        stableAmount_ = _stableToken.expectedMintAmount(
+            (collateralAmount_ * ltv_) / _DENOMINATOR,
+            shareAmount_
+        );
+    }
+
+    function exchangedShareAmountFromCollateralWithLtv(
+        uint256 collateralAmount_,
+        uint256 ltv_
+    ) public view returns (uint256 shareAmount_) {
+        shareAmount_ = _stableToken.exchangedShareAmountFromDebt(
+            (collateralAmount_ * ltv_) / _DENOMINATOR
+        );
     }
 
     //============ CDP Internal Operations (override) ============//

@@ -50,7 +50,7 @@ contract FOX is
     uint256 public step;
 
     uint256 private constant _TIME_PERIOD = 1 hours;
-    uint256 public trustLevel = 0; // 0 ~ 10000 (0% ~ 100%)
+    uint256 public trustLevel = 200; // 0 ~ 10000 (0% ~ 100%) // TODO: initial trust level
 
     address private _feeTo;
     uint256 private _mintFeeRatio; // (feeRatio / _DENOMINATOR)
@@ -278,10 +278,10 @@ contract FOX is
         uint256 _requiredShareAmount = requiredShareAmountFromDebt(debtAmount_);
         if (_requiredShareAmount > shareAmount_) {
             _requiredDebtAmount = requiredDebtAmountFromShare(shareAmount_);
-            require(
-                _requiredDebtAmount <= debtAmount_,
-                "FOX::_mintInternal: Not enough debtTokens."
-            );
+            // require(
+            //     _requiredDebtAmount <= debtAmount_,
+            //     "FOX::_mintInternal: Not enough debtTokens."
+            // );
             _requiredShareAmount = shareAmount_;
         } else {
             _requiredDebtAmount = debtAmount_;
