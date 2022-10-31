@@ -3,10 +3,17 @@
 pragma solidity 0.8.9;
 
 interface IFoxFarm {
+    //============ View Functions ============//
+
     function requiredShareAmountFromCollateralWithLtv(
         uint256 collateralAmount_,
         uint256 ltv_
     ) external view returns (uint256 shareAmount_);
+
+    function requiredCollateralAmountFromShareWithLtv(
+        uint256 shareAmount_,
+        uint256 ltv_
+    ) external view returns (uint256 collateralAmount_);
 
     function expectedMintAmountWithLtv(
         uint256 collateralAmount_,
@@ -14,10 +21,22 @@ interface IFoxFarm {
         uint256 shareAmount_
     ) external view returns (uint256 stableAmount_);
 
+    function expectedRedeemAmountWithLtv(uint256 stableAmount_, uint256 ltv_)
+        external
+        view
+        returns (uint256 collateralAmount_, uint256 shareAmount_);
+
     function exchangedShareAmountFromCollateralWithLtv(
         uint256 collateralAmount_,
         uint256 ltv_
     ) external view returns (uint256 shareAmount_);
+
+    function exchangedCollateralAmountFromShareWithLtv(
+        uint256 shareAmount_,
+        uint256 ltv_
+    ) external view returns (uint256 collateralAmount_);
+
+    //============ FOX Operations ============//
 
     function recollateralizeBorrowDebt(
         address account_,
@@ -42,6 +61,8 @@ interface IFoxFarm {
         uint256 id_,
         uint256 amount_
     ) external returns (uint256 debtAmount_);
+
+    //============ Coupon Operations ============//
 
     function buybackCoupon(address account_, uint256 amount_)
         external

@@ -10,12 +10,4 @@ interface ISIN {
     function burn(uint256 amount) external;
 
     function burnFrom(address account, uint256 amount) external;
-
-    //============ Owner ============//
-
-    function addAllowlist(address newAddr) external;
-
-    function removeAllowlist(address targetAddr) external;
-
-    function setAllowAll(bool newAllowAll) external;
 }

@@ -5,12 +5,11 @@ pragma solidity 0.8.9;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "../utils/Allowlist.sol";
 import "../utils/Nonzero.sol";
 
 import "../interfaces/ISIN.sol";
 
-abstract contract abstractSIN is ISIN, ERC20, Ownable, Allowlist {
+abstract contract abstractSIN is ISIN, ERC20, Ownable {
     function approveMax(address spender) public {
         _approve(_msgSender(), spender, type(uint256).max);
     }
@@ -25,39 +24,6 @@ abstract contract abstractSIN is ISIN, ERC20, Ownable, Allowlist {
 
     function burnFrom(address account, uint256 amount) public onlyOwner {
         _burn(account, amount);
-    }
-
-    //============ Owner ============//
-
-    function addAllowlist(address newAddr) external onlyOwner {
-        _addAllowlist(newAddr);
-    }
-
-    function removeAllowlist(address targetAddr) external onlyOwner {
-        _removeAllowlist(targetAddr);
-    }
-
-    function setAllowAll(bool newAllowAll) external onlyOwner {
-        _setAllowAll(newAllowAll);
-    }
-
-    //============ Lock ============//
-
-    function transfer(address to, uint256 amount)
-        public
-        override
-        onlyAllowlist
-        returns (bool)
-    {
-        return super.transfer(to, amount);
-    }
-
-    function transferFrom(
-        address from,
-        address to,
-        uint256 amount
-    ) public override onlyAllowlist returns (bool) {
-        return super.transferFrom(from, to, amount);
     }
 }
 

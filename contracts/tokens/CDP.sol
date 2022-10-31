@@ -29,7 +29,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     IERC20 internal immutable _collateralToken;
     IERC20 internal immutable _debtToken;
 
-    uint256 private _collateralPrice = 10000; // TODO: initial collateral price
+    uint256 internal _collateralPrice = 10000; // TODO: initial collateral price
     // treats SIN is always $1.
 
     uint256 internal constant _DENOMINATOR = 10000;

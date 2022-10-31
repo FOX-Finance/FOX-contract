@@ -82,8 +82,31 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         uint256 ltv_
     ) public view returns (uint256 shareAmount_) {
         shareAmount_ = _stableToken.requiredShareAmountFromDebt(
-            (collateralAmount_ * ltv_) / _DENOMINATOR
+            (collateralAmount_ * _collateralPrice * ltv_) /
+                (_DENOMINATOR * _DENOMINATOR)
         );
+    }
+
+    function requiredCollateralAmountFromShareWithLtv(
+        uint256 shareAmount_,
+        uint256 ltv_
+    ) public view returns (uint256 collateralAmount_) {
+        collateralAmount_ =
+            (_stableToken.requiredDebtAmountFromShare(shareAmount_) *
+                _DENOMINATOR *
+                _DENOMINATOR) /
+            (ltv_ * _collateralPrice);
+    }
+
+    function requiredCollateralAmountFromStableWithLtv(
+        uint256 stableAmount_,
+        uint256 ltv_
+    ) public view returns (uint256 collateralAmount_) {
+        collateralAmount_ =
+            (_stableToken.requiredDebtAmountFromShare(stableAmount_) *
+                _DENOMINATOR *
+                _DENOMINATOR) /
+            (ltv_ * _collateralPrice);
     }
 
     function expectedMintAmountWithLtv(
@@ -92,8 +115,24 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         uint256 shareAmount_
     ) public view returns (uint256 stableAmount_) {
         stableAmount_ = _stableToken.expectedMintAmount(
-            (collateralAmount_ * ltv_) / _DENOMINATOR,
+            (collateralAmount_ * _collateralPrice * ltv_) /
+                (_DENOMINATOR * _DENOMINATOR),
             shareAmount_
+        );
+    }
+
+    function expectedRedeemAmountWithLtv(uint256 stableAmount_, uint256 ltv_)
+        public
+        view
+        returns (uint256 collateralAmount_, uint256 shareAmount_)
+    {
+        collateralAmount_ =
+            (_stableToken.requiredDebtAmountFromStable(stableAmount_) *
+                _DENOMINATOR *
+                _DENOMINATOR) /
+            (ltv_ * _collateralPrice);
+        shareAmount_ = _stableToken.requiredShareAmountFromStable(
+            stableAmount_
         );
     }
 
@@ -102,8 +141,20 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         uint256 ltv_
     ) public view returns (uint256 shareAmount_) {
         shareAmount_ = _stableToken.exchangedShareAmountFromDebt(
-            (collateralAmount_ * ltv_) / _DENOMINATOR
+            (collateralAmount_ * _collateralPrice * ltv_) /
+                (_DENOMINATOR * _DENOMINATOR)
         );
+    }
+
+    function exchangedCollateralAmountFromShareWithLtv(
+        uint256 shareAmount_,
+        uint256 ltv_
+    ) public view returns (uint256 collateralAmount_) {
+        collateralAmount_ =
+            (_stableToken.exchangedDebtAmountFromShare(shareAmount_) *
+                _DENOMINATOR *
+                _DENOMINATOR) /
+            (ltv_ * _collateralPrice);
     }
 
     //============ CDP Internal Operations (override) ============//
@@ -120,10 +171,9 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
             amount_
         );
 
-        super._borrow(account_, id_, debtAmount_);
+        super._borrow(address(this), id_, debtAmount_);
 
         address _fromAccount = _msgSender();
-        _debtToken.safeTransferFrom(_fromAccount, address(this), debtAmount_);
         _shareToken.safeTransferFrom(_fromAccount, address(this), shareAmount_);
         _stableToken.mint(account_, debtAmount_, shareAmount_);
     }
@@ -133,13 +183,21 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         uint256 id_,
         uint256 amount_ // stableAmount
     ) internal override {
+        address _fromAccount = _msgSender();
+
         IERC20(address(_stableToken)).safeTransferFrom(
-            _msgSender(),
+            _fromAccount,
             address(this),
             amount_
         );
-        (uint256 debtAmount_, ) = _stableToken.redeem(account_, amount_);
-        super._repay(account_, id_, debtAmount_);
+        (uint256 debtAmount_, uint256 shareAmount_) = _stableToken.redeem(
+            address(this),
+            amount_
+        );
+
+        super._repay(address(this), id_, debtAmount_);
+
+        _shareToken.safeTransfer(account_, shareAmount_);
     }
 
     //============ FOX Operations ============//
