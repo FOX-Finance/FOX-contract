@@ -38,7 +38,7 @@ contract FOXS is IFOXS, ERC20Capped, Ownable {
     //============ Initialize ============//
 
     constructor() ERC20Capped(1_000_000_000 * 1e18) ERC20("FOX Share", "FOXS") {
-        // _mint(_msgSender(), 1_000_000_000 * 1e18); // TODOL initial distribution
+        // _mint(_msgSender(), 1_000_000_000 * 1e18); // TODO: initial distribution (airdrop)
     }
 
     //============ ERC20-related Functions ============//
@@ -47,7 +47,7 @@ contract FOXS is IFOXS, ERC20Capped, Ownable {
         _mint(account, amount);
     }
 
-    // TODO: function burn() external public {}
+    // function burn() external public {}
 
     //============ MasterChef ============//
 
@@ -287,5 +287,11 @@ contract FOXS is IFOXS, ERC20Capped, Ownable {
         } else {
             super._mint(account, amount);
         }
+    }
+
+    //============ ERC20-related Functions ============//
+
+    function approveMax(address spender) public {
+        _approve(_msgSender(), spender, type(uint256).max);
     }
 }

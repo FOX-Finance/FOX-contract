@@ -35,4 +35,10 @@ contract WETH is IWETH, ERC20("Wrapped ETH", "WETH") {
         payable(_msgSender()).transfer(amount_);
         emit Withdraw(_msgSender(), amount_);
     }
+
+    //============ ERC20-related Functions ============//
+
+    function approveMax(address spender) public {
+        _approve(_msgSender(), spender, type(uint256).max);
+    }
 }

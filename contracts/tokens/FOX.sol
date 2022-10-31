@@ -31,7 +31,6 @@ contract FOX is
     Nonzero
 {
     using SafeERC20 for IERC20;
-    using SafeERC20 for IERC20;
 
     //============ Params ============//
 
@@ -78,7 +77,7 @@ contract FOX is
     {
         _feeTo = feeTo_; // can be zero address
         _debtToken = IERC20(debtToken_);
-        _shareToken = IFOXS(shareToken_);
+        _shareToken = IERC20(shareToken_);
 
         step = _ULTRA_STEP;
 
@@ -368,33 +367,25 @@ contract FOX is
         whenNotPaused
         returns (uint256 debtAmount_, uint256 shareAmount_)
     {
-        address _fromAccount = _msgSender();
-
         // send
-        _burn(_fromAccount, stableAmount_);
+        _burn(_msgSender(), stableAmount_);
 
         // calculate
         (debtAmount_, shareAmount_) = expectedRedeemAmount(stableAmount_);
 
         // receive
         if (_feeTo != address(0)) {
-            _debtToken.safeTransferFrom(
-                address(this),
+            _debtToken.safeTransfer(
                 toAccount_,
                 debtAmount_ - (debtAmount_ * _burnFeeRatio) / _DENOMINATOR // _feeTo
             );
-            _shareToken.safeTransferFrom(
-                address(this),
+            _shareToken.safeTransfer(
                 toAccount_,
                 shareAmount_ - (shareAmount_ * _burnFeeRatio) / _DENOMINATOR // _feeTo
             );
         } else {
-            _debtToken.safeTransferFrom(address(this), toAccount_, debtAmount_);
-            _shareToken.safeTransferFrom(
-                address(this),
-                toAccount_,
-                shareAmount_
-            );
+            _debtToken.safeTransfer(toAccount_, debtAmount_);
+            _shareToken.safeTransfer(toAccount_, shareAmount_);
         }
     }
 
@@ -461,9 +452,7 @@ contract FOX is
         external
         whenNotPaused
         returns (uint256 shareAmount_)
-    {
-
-    }
+    {}
 
     //============ ERC20-related Functions ============//
 

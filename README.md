@@ -201,16 +201,23 @@ TBD
 <!--
 ---
 
-# TODO
+# TODO (dev)
+- [x] Check additional conditions: total ratio, cdp ratio
+- [ ] BNB liquid staking -> stBNB as collateral
+- [ ] Zap (FOXS <-> BNB)
+- [ ] WARNING or Restriction when protocol trust touches 100% collateral backing level
+
+# TODO (tech)
 - [ ] Moralis
 - [ ] Axelar
+
+# TODO (non-tech)
 - [ ] solidity-docgen
 - [ ] Docusaurus
 - [ ] CI/CD
-- [ ] Check additional conditions: total ratio, cdp ratio, 100% upper bound
 
 # Roadmap
-- [ ] BNB liquid staking -> stBNB as collateral
-- [ ] LP as collateral
+- [ ] LP as collateral (kind of liquid staking)
 - [ ] NFT Market & Auction
+- [ ] Swap
 -->

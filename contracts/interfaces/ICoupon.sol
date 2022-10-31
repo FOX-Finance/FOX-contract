@@ -14,6 +14,64 @@ interface ICoupon {
 
     //============ Events ============//
 
+    event Open(address indexed account_, uint256 indexed id_);
+    event Close(address indexed account_, uint256 indexed id_);
+    event Deposit(
+        address indexed account_,
+        uint256 indexed id_,
+        uint256 amount
+    );
+    event Withdraw(
+        address indexed account_,
+        uint256 indexed id_,
+        uint256 amount
+    );
+    event Borrow(address indexed account_, uint256 indexed id_, uint256 amount);
+    event Repay(address indexed account_, uint256 indexed id_, uint256 amount);
+
+    event Update(
+        uint256 indexed id_,
+        uint256 prevFee,
+        uint256 currFee,
+        uint256 prevTimestamp,
+        uint256 currTimestamp
+    );
+
     event SetFeeTo(address prevFeeTo, address currFeeTo);
     event SetFeeRatio(uint256 prevFeeRatio, uint256 currFeeRatio);
+
+    //============ Owner ============//
+
+    function setFeeTo(address newFeeTo) external;
+
+    function setFeeRatio(uint256 newFeeRatio) external;
+
+    //============ Pausable ============//
+
+    function pause() external;
+
+    function unpause() external;
+
+    //============ SGP Operations ============//
+
+    /**
+     * @notice Opens a SGP position.
+     */
+    function mintTo(
+        address toAccount_,
+        uint256 shareAmount_,
+        uint256 grantAmount_
+    ) external returns (uint256 id_);
+
+    /**
+     * @notice Closes the `id_` SGP position.
+     */
+    function burn(uint256 id_)
+        external
+        returns (uint256 shareAmount_, uint256 grantAmount_);
+
+    /**
+     * @notice Update fee.
+     */
+    function updateFee(uint256 id_) external returns (uint256 additionalFee);
 }

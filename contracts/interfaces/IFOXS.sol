@@ -4,7 +4,7 @@ pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface IFOXS is IERC20 {
+interface IFOXS {
     //============ Params ============//
 
     struct UserInfo {
@@ -96,4 +96,8 @@ interface IFOXS is IERC20 {
     ) external;
 
     function emergencyWithdraw(uint256 pid_, address to_) external;
+
+    //============ ERC20-related Functions ============//
+
+    function approveMax(address spender) external;
 }

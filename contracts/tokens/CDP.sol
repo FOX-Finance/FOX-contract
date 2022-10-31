@@ -32,7 +32,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     uint256 private _collateralPrice = 10000; // TODO: initial collateral price
     // treats SIN is always $1.
 
-    uint256 private constant _DENOMINATOR = 10000;
+    uint256 internal constant _DENOMINATOR = 10000;
     uint256 private constant _minimumCollateral = 0.005 ether;
     uint256 public maxLTV; // (maxLTV / _DENOMINATOR)
     uint256 public cap; // total debt cap
@@ -43,9 +43,9 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     // CDP
     mapping(uint256 => CollateralizedDebtPosition) public cdps;
     uint256 public id;
-    uint256 public totalCollateral; // TODO: for coupon
-    uint256 public totalDebt; // TODO: for coupon
-    uint256 public totalFee; // TODO: for coupon
+    uint256 public totalCollateral;
+    uint256 public totalDebt;
+    uint256 public totalFee;
 
     //============ Modifiers ============//
 
@@ -140,8 +140,10 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     /**
      * @notice CDP risk indicator.
      */
-    function isSafe(uint256 id_) public view virtual returns (bool) {
-        return healthFactor(id_) < 1;
+    function isSafe(uint256 id_) public view returns (bool) {
+        return
+            (healthFactor(id_) < _DENOMINATOR) &&
+            (globalHealthFactor() < _DENOMINATOR);
     }
 
     /**
@@ -167,6 +169,12 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         health =
             (_cdp.debt * _DENOMINATOR * _DENOMINATOR * _DENOMINATOR) /
             (_cdp.collateral * _collateralPrice * maxLTV);
+    }
+
+    function globalHealthFactor() public view virtual returns (uint256 health) {
+        health =
+            (totalDebt * _DENOMINATOR * _DENOMINATOR * _DENOMINATOR) /
+            (totalCollateral * _collateralPrice * maxLTV);
     }
 
     function borrowAmountToLTV(uint256 id_, uint256 multipliedLtv_)
@@ -375,6 +383,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         // require(_isApprovedOrOwner(_sender, id_)); // Anyone
 
         _cdp.collateral += amount_;
+        totalCollateral += amount_;
         _collateralToken.safeTransferFrom(account_, address(this), amount_);
 
         require(
@@ -393,6 +402,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         CollateralizedDebtPosition storage _cdp = cdps[id_];
 
         _cdp.collateral -= amount_;
+        totalCollateral -= amount_;
         _collateralToken.safeTransfer(account_, amount_);
 
         require(isSafe(id_), "CDP::_withdraw: CDP operation exceeds max LTV.");
@@ -412,6 +422,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         CollateralizedDebtPosition storage _cdp = cdps[id_];
 
         _cdp.debt += amount_;
+        totalDebt += amount_;
         ISIN(address(_debtToken)).mintTo(account_, amount_);
 
         require(isSafe(id_), "CDP::_borrow: CDP operation exceeds max LTV.");
@@ -435,10 +446,12 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         // repay fee first
         if (_cdp.fee >= amount_) {
             _cdp.fee -= amount_;
+            totalFee -= amount_;
             _debtToken.safeTransferFrom(account_, feeTo, amount_);
         } else if (_cdp.fee != 0) {
             _debtToken.safeTransferFrom(account_, feeTo, _cdp.fee);
             _cdp.debt -= (amount_ - _cdp.fee);
+            totalDebt -= (amount_ - _cdp.fee);
             ISIN(address(_debtToken)).burnFrom(account_, amount_ - _cdp.fee);
             _cdp.fee = 0;
         }
@@ -461,6 +474,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
             (_cdp.debt * (currTimestamp - prevTimestamp) * _feeRatio) /
             (_DENOMINATOR * 365 * 24 * 60 * 60);
         _cdp.fee += additionalFee;
+        totalFee += additionalFee;
 
         _cdp.latestUpdate = currTimestamp;
         currFee = _cdp.fee;

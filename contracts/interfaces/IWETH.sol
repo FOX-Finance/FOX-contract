@@ -8,4 +8,8 @@ interface IWETH {
 
     event Deposit(address indexed account_, uint256 amount_);
     event Withdraw(address indexed account_, uint256 amount_);
+
+    //============ ERC20-related Functions ============//
+
+    function approveMax(address spender) external;
 }
