@@ -16,12 +16,17 @@ module.exports = {
   paths: {
     sources: './contracts',
   },
-  defaultNetwork: 'mumbai',
+  defaultNetwork: 'hardhat',
   networks: {
-    hardhat: {},
-    mumbai: {
-      url: 'https://rpc-mumbai.maticvigil.com',
-      accounts: [data.privateKey],
+    hardhat: {
+      forking: {
+        url: 'https://data-seed-prebsc-1-s1.binance.org:8545',
+        accounts: [data.owner, data.oracleFeeder, data.feeTo],
+      },
+    },
+    bscTestnet: {
+      url: 'https://data-seed-prebsc-1-s1.binance.org:8545',
+      accounts: [data.owner, data.oracleFeeder, data.feeTo],
     },
   },
 };
