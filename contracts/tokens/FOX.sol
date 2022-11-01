@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "../oracle/Oracle.sol";
-import "../utils/Allowlist.sol";
 import "../utils/Interval.sol";
 import "../utils/Nonzero.sol";
 import "../interfaces/IFOXS.sol";
@@ -20,16 +19,7 @@ import "../interfaces/IFOX.sol";
  * @author Luke Park (lukepark327@gmail.com)
  * @notice Gets SIN and FOXS, gives FOX as debt.
  */
-contract FOX is
-    IFOX,
-    ERC20,
-    Pausable,
-    Ownable,
-    Oracle,
-    Allowlist,
-    Interval,
-    Nonzero
-{
+contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
     using SafeERC20 for IERC20;
 
     //============ Params ============//
@@ -79,7 +69,7 @@ contract FOX is
         _debtToken = IERC20(debtToken_);
         _shareToken = IERC20(shareToken_);
 
-        step = _ULTRA_STEP;
+        step = _ULTRA_STEP; // TODO: automatically adjusting
 
         _mintFeeRatio = mintFeeRatio_;
         _burnFeeRatio = burnFeeRatio_;
@@ -111,18 +101,6 @@ contract FOX is
         uint256 prevBonusRatio = _bonusRatio;
         _bonusRatio = newBonusRatio;
         emit SetBonusRatio(prevBonusRatio, _bonusRatio);
-    }
-
-    function addAllowlist(address newAddr) external onlyOwner {
-        _addAllowlist(newAddr);
-    }
-
-    function removeAllowlist(address targetAddr) external onlyOwner {
-        _removeAllowlist(targetAddr);
-    }
-
-    function setAllowAll(bool newAllowAll) external onlyOwner {
-        _setAllowAll(newAllowAll);
     }
 
     //============ Pausable ============//
@@ -206,11 +184,11 @@ contract FOX is
 
     //============ View Functions ============//
 
-    function getStablePrice() external view onlyAllowlist returns (uint256) {
+    function getStablePrice() external view returns (uint256) {
         return _stablePrice;
     }
 
-    function getSharePrice() external view onlyAllowlist returns (uint256) {
+    function getSharePrice() external view returns (uint256) {
         return _sharePrice;
     }
 

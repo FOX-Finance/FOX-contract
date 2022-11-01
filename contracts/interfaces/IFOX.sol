@@ -29,12 +29,6 @@ interface IFOX {
 
     function setBonusRatio(uint256 newBonusRatio) external;
 
-    function addAllowlist(address newAddr) external;
-
-    function removeAllowlist(address targetAddr) external;
-
-    function setAllowAll(bool newAllowAll) external;
-
     //============ Pausable ============//
 
     function pause() external;
