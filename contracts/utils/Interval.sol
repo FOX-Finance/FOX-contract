@@ -10,10 +10,7 @@ abstract contract Interval {
     //============ Modifiers ============//
 
     modifier interval(uint256 TIME_PERIOD) {
-        require(
-            TIME_PERIOD < block.timestamp - _lastStepUpdateTime,
-            "Interval::interval: Not yet."
-        );
+        require(isPassInterval(TIME_PERIOD), "Interval::interval: Not yet.");
         _;
         _lastStepUpdateTime = block.timestamp;
     }
@@ -22,5 +19,11 @@ abstract contract Interval {
 
     constructor() {
         _lastStepUpdateTime = block.timestamp;
+    }
+
+    //============ View Functions ============//
+
+    function isPassInterval(uint256 TIME_PERIOD) public view returns (bool) {
+        return TIME_PERIOD < block.timestamp - _lastStepUpdateTime;
     }
 }
