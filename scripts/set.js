@@ -2,12 +2,13 @@ const env = require("../env");
 
 let signer = {
     "owner": null,
-    "oracleFeeder": null,
+    "bot": null,
     "feeTo": null,
     "user": null
 };
 
 let contract = {
+    "oracleFeeder": null,
     "weth": null,
     "nis": null,
     "sin": null,
@@ -18,13 +19,13 @@ let contract = {
 };
 
 async function set() {
-    [signer.owner, signer.oracleFeeder, signer.feeTo, signer.user] = await ethers.getSigners(); // main/test-net
+    [signer.owner, signer.bot, signer.feeTo, signer.user] = await ethers.getSigners(); // main/test-net
 
     let balanceOfOwner = await signer.owner.getBalance() / (10 ** 18);
-    console.log("Owner:\t\t", signer.owner.address, `(${balanceOfOwner} ETH)`);
-    console.log("OracleFeeder:\t", signer.oracleFeeder.address);
-    console.log("FeeTo:\t\t", signer.feeTo.address);
-    console.log("User:\t\t", signer.user.address);
+    console.log("Owner:\t", signer.owner.address, `(${balanceOfOwner} ETH)`);
+    console.log("Bot:\t", signer.bot.address);
+    console.log("FeeTo:\t", signer.feeTo.address);
+    console.log("User:\t", signer.user.address);
 }
 
 async function attach() {
@@ -38,6 +39,10 @@ async function attach() {
 
     process.stdout.write("Attach FOX");
     contract.fox = await ethers.getContractAt("FOX", env.FOX);
+    console.log(" - complete");
+
+    process.stdout.write("Attach OracleFeeder");
+    contract.oracleFeeder = await ethers.getContractAt("OracleFeeder", env.OracleFeeder);
     console.log(" - complete");
 }
 

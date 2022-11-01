@@ -208,12 +208,14 @@ TBD
 <!--
 ---
 
-# TODO (dev)
+# Proof-of-Work
 - [x] Check additional conditions: total ratio, cdp ratio
+- [ ] Oracle feeder
 - [ ] BNB liquid staking -> stBNB as collateral
 - [ ] Airdrop: DAI, FRAX
 - [ ] WARNING or Restriction when protocol trust touches 100% collateral backing level
-- [ ] OracleFeeder.sol
+- [x] OracleFeeder.sol
+- [ ] Treasury.sol (Ministry of Finance)
 
 # TODO (tech)
 - [ ] Moralis
