@@ -13,25 +13,25 @@ async function deploy() {
     const WETH = await ethers.getContractFactory("WETH", signer.owner);
     contract.weth = await WETH.deploy();
     await contract.weth.deployed();
-    console.log(":\t", contract.weth.address);
+    console.log(":\t\t", contract.weth.address);
 
     process.stdout.write("Deploy NIS");
     const NIS = await ethers.getContractFactory("NIS", signer.owner);
     contract.nis = await NIS.deploy();
     await contract.nis.deployed();
-    console.log(":\t", contract.nis.address);
+    console.log(":\t\t", contract.nis.address);
 
     process.stdout.write("Deploy SIN");
     const SIN = await ethers.getContractFactory("SIN", signer.owner);
     contract.sin = await SIN.deploy(contract.nis.address);
     await contract.sin.deployed();
-    console.log(":\t", contract.sin.address);
+    console.log(":\t\t", contract.sin.address);
 
     process.stdout.write("Deploy FOXS");
     const FOXS = await ethers.getContractFactory("FOXS", signer.owner);
     contract.foxs = await FOXS.deploy();
     await contract.foxs.deployed();
-    console.log(":\t", contract.foxs.address);
+    console.log(":\t\t", contract.foxs.address);
 
     process.stdout.write("Deploy FOX");
     const FOX = await ethers.getContractFactory("FOX", signer.owner);
@@ -40,13 +40,13 @@ async function deploy() {
         20, 45, 75
     );
     await contract.fox.deployed();
-    console.log(":\t", contract.fox.address);
+    console.log(":\t\t", contract.fox.address);
 
     process.stdout.write("Deploy Coupon");
     const Coupon = await ethers.getContractFactory("Coupon", signer.owner);
     contract.coupon = await Coupon.deploy(signer.feeTo.address, contract.nis.address, 0);
     await contract.coupon.deployed();
-    console.log(":\t", contract.coupon.address);
+    console.log(":\t\t", contract.coupon.address);
 
     process.stdout.write("Deploy FoxFarm");
     const FoxFarm = await ethers.getContractFactory("FoxFarm", signer.owner);
@@ -56,9 +56,13 @@ async function deploy() {
         7000, ethers.constants.MaxUint256, 200
     );
     await contract.foxFarm.deployed();
-    console.log(":\t", contract.foxFarm.address);
+    console.log(":\t\t", contract.foxFarm.address);
 
-    fs.writeFileSync("env.json", JSON.stringify({
+    fs.writeFileSync("address.json", JSON.stringify({
+        "Owner": signer.owner.address,
+        "Bot": signer.bot.address,
+        "FeeTo": signer.feeTo.address,
+        "User": signer.user.address,
         "OracleFeeder": contract.oracleFeeder.address,
         "WETH": contract.weth.address,
         "NIS": contract.nis.address,
@@ -86,9 +90,21 @@ async function init() {
     await txRes.wait();
     console.log(" - complete");
 
-    process.stdout.write("[NIS] Change NIS's owner to Coupon");
+    // process.stdout.write("[NIS] Change NIS's owner to Coupon");
+    // console.log(" - complete");
 
-    process.stdout.write("[Coupon] Change Coupon's owner to FoxFarm");
+    // process.stdout.write("[Coupon] Change Coupon's owner to FoxFarm");
+    // console.log(" - complete");
+
+    //============ Oracle ============//
+
+    process.stdout.write("[OracleFeeder] Submit FoxFarm and FOX");
+    txRes = await contract.oracleFeeder.connect(signer.bot).initialize(
+        contract.foxFarm.address,
+        contract.fox.address
+    );
+    await txRes.wait();
+    console.log(" - complete");
 }
 
 async function main() {

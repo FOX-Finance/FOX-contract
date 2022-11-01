@@ -11,6 +11,8 @@ How to increase capital efficiency?
 - increase maxLTV: more easy, but more risky
 - increase service's trust: in some ways, more risky. But collaterals are SAFU
 - increase both maxLTV and trust: 😲
+
+Solve Stablecoin's trilemma
 -->
 
 ## Trust & Decentralization
@@ -62,7 +64,7 @@ TBD
 ```
 
 1. Approve `FOX` to `FoxFarm`.
-2. Execute `close()` in `FoxFarm`.
+2. Execute `repayAndWithdraw()` in `FoxFarm`.
 
 ## Recollateralization (+Bonus)
 
@@ -163,9 +165,22 @@ TBD
 
 ---
 
-# AMO
+# Liquid Staking
 
-TBD
+We use [Ankr](https://www.ankr.com/bnb-liquid-staking/)'s aBNBc token.
+
+## Requirements
+
+- Minimum value to stake: 0.502 BNB (the 0.002 part is the relayer fee).
+- Minimum value to unstake: 0.5 BNB.
+- Unbond time: 7–10 days.
+
+## Fees
+
+- Base fee: 10% of the Liquid Staking rewards as a fee.
+- Relayer fee: 0.002 BNB.
+- Unstaking fee: 0.004 BNB.
+- Unstaking relay fee: 0.000075 BNB.
 
 ---
 
@@ -185,7 +200,7 @@ TBD
 $ npm install
 ```
 
-### 1. Set `config.json`
+### 1. Set `private.json`
 
 ```js
 {
@@ -206,29 +221,28 @@ $ npx hardhat run scripts/deploy.js
 TBD
 
 <!--
----
-
 # Proof-of-Work
+- [ ] Moralis
 - [x] Check additional conditions: total ratio, cdp ratio
 - [x] Oracle feeder
-- [ ] BNB liquid staking -> stBNB as collateral
 - [ ] WARNING or Restriction when protocol trust touches 100% collateral backing level
-- [ ] Treasury.sol (Ministry of Finance) & Vesting.sol
+- [ ] BNB liquid staking -> ankr's aBNBc as collateral:
+       - https://www.ankr.com/docs/staking/for-integrators/smart-contract-api/bnb-api/#stake-bnb-and-claim-abnbc
+       - https://www.ankr.com/docs/staking/for-integrators/smart-contract-api/bnb-api/#unstake-abnbc-and-get-bnb
+       - https://www.ankr.com/docs/staking/for-integrators/smart-contract-api/bnb-api/#get-apr
 - [x] Airdrop: DAI, FRAX
 
-# TODO (tech)
-- [ ] Moralis
-- [ ] Axelar
-
-# TODO (non-tech)
+# Proof-of-Work (non-tech)
 - [ ] solidity-docgen
 - [ ] Docusaurus
 - [ ] CI/CD
 
 # Roadmap
+- [ ] Treasury.sol (Ministry of Finance) & Vesting.sol
 - [ ] Zap (FOXS <-> BNB)
 - [ ] Multiple collateral: LP as collateral (kind of liquid staking)
-- [ ] Over the liquid: AMO (maybe delta neutral)
+- [ ] Multichain
+- [ ] Over the liquid: Collateral Hedge (maybe delta neutral)
 - [ ] NFT Market & Auction / Or adopting non-collateral lending feature
 - [ ] (optional) Swap
 -->

@@ -1,4 +1,4 @@
-const data = require("./config");
+require('dotenv').config();
 
 require("@nomicfoundation/hardhat-toolbox");
 
@@ -21,16 +21,25 @@ module.exports = {
     hardhat: {
       forking: {
         url: 'https://data-seed-prebsc-1-s1.binance.org:8545',
-        accounts: [data.owner, data.oracleFeeder, data.feeTo, data.user],
+        accounts: [
+          process.env.PRIVATE_KEY_OWNER,
+          process.env.PRIVATE_KEY_ORACLE_FEEDER,
+          process.env.PRIVATE_KEY_FEE_TO,
+          process.env.PRIVATE_KEY_USER
+        ],
       },
     },
     localhost: {
       url: 'http://127.0.0.1:8545',
-      accounts: [data.owner, data.oracleFeeder, data.feeTo, data.user],
     },
     bscTestnet: {
       url: 'https://data-seed-prebsc-1-s1.binance.org:8545',
-      accounts: [data.owner, data.oracleFeeder, data.feeTo, data.user],
+      accounts: [
+        process.env.PRIVATE_KEY_OWNER,
+        process.env.PRIVATE_KEY_ORACLE_FEEDER,
+        process.env.PRIVATE_KEY_FEE_TO,
+        process.env.PRIVATE_KEY_USER
+      ],
     },
   },
 };

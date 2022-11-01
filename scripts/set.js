@@ -1,4 +1,4 @@
-const env = require("../env");
+const address = require("../address");
 
 let signer = {
     "owner": null,
@@ -30,19 +30,19 @@ async function set() {
 
 async function attach() {
     process.stdout.write("Attach WETH");
-    contract.weth = await ethers.getContractAt("WETH", env.WETH);
+    contract.weth = await ethers.getContractAt("WETH", address.WETH);
     console.log(" - complete");
 
     process.stdout.write("Attach FOXS");
-    contract.foxs = await ethers.getContractAt("FOXS", env.FOXS);
+    contract.foxs = await ethers.getContractAt("FOXS", address.FOXS);
     console.log(" - complete");
 
     process.stdout.write("Attach FOX");
-    contract.fox = await ethers.getContractAt("FOX", env.FOX);
+    contract.fox = await ethers.getContractAt("FOX", address.FOX);
     console.log(" - complete");
 
     process.stdout.write("Attach OracleFeeder");
-    contract.oracleFeeder = await ethers.getContractAt("OracleFeeder", env.OracleFeeder);
+    contract.oracleFeeder = await ethers.getContractAt("OracleFeeder", address.OracleFeeder);
     console.log(" - complete");
 }
 
