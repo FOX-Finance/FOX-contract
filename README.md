@@ -210,12 +210,11 @@ TBD
 
 # Proof-of-Work
 - [x] Check additional conditions: total ratio, cdp ratio
-- [ ] Oracle feeder
+- [x] Oracle feeder
 - [ ] BNB liquid staking -> stBNB as collateral
-- [ ] Airdrop: DAI, FRAX
 - [ ] WARNING or Restriction when protocol trust touches 100% collateral backing level
-- [x] OracleFeeder.sol
-- [ ] Treasury.sol (Ministry of Finance)
+- [ ] Treasury.sol (Ministry of Finance) & Vesting.sol
+- [x] Airdrop: DAI, FRAX
 
 # TODO (tech)
 - [ ] Moralis
@@ -229,6 +228,7 @@ TBD
 # Roadmap
 - [ ] Zap (FOXS <-> BNB)
 - [ ] Multiple collateral: LP as collateral (kind of liquid staking)
+- [ ] Over the liquid: AMO (maybe delta neutral)
 - [ ] NFT Market & Auction / Or adopting non-collateral lending feature
-- [ ] (Maybe) Swap
+- [ ] (optional) Swap
 -->

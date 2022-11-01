@@ -38,7 +38,10 @@ contract FOXS is IFOXS, ERC20Capped, Ownable {
     //============ Initialize ============//
 
     constructor() ERC20Capped(1_000_000_000 * 1e18) ERC20("FOX Share", "FOXS") {
-        // _mint(_msgSender(), 1_000_000_000 * 1e18); // TODO: initial distribution (airdrop)
+        // TODO: allocate x% to MerkleAirdrop
+        // TODO: allocate x% to Treasury (Community pool)
+        // TODO: allocate x% to Foundation & Developers (Lockup & Vesting)
+        // _mint(_msgSender(), 1_000_000_000 * 1e18);
     }
 
     //============ ERC20-related Functions ============//
