@@ -1,16 +1,6 @@
 const fs = require('fs');
 
-let signer = { "owner": null, "oracleFeeder": null, "feeTo": null };
-let contract = { "weth": null, "nis": null, "sin": null, "foxs": null, "fox": null, "coupon": null, "foxFarm": null };
-
-async function set() {
-    [signer.owner, signer.oracleFeeder, signer.feeTo] = await ethers.getSigners(); // main/test-net
-
-    let balanceOfOwner = await signer.owner.getBalance() / (10**18);
-    console.log("Deployer:\t", signer.owner.address, `(${balanceOfOwner} ETH)`);
-    console.log("OracleFeeder:\t", signer.oracleFeeder.address);
-    console.log("FeeTo:\t\t", signer.feeTo.address);
-}
+const { signer, contract, set } = require('./set');
 
 async function deploy() {
     process.stdout.write("Deploy WETH");

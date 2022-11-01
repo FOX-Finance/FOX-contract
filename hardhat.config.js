@@ -21,12 +21,16 @@ module.exports = {
     hardhat: {
       forking: {
         url: 'https://data-seed-prebsc-1-s1.binance.org:8545',
-        accounts: [data.owner, data.oracleFeeder, data.feeTo],
+        accounts: [data.owner, data.oracleFeeder, data.feeTo, data.user],
       },
+    },
+    localhost: {
+      url: 'http://127.0.0.1:8545',
+      accounts: [data.owner, data.oracleFeeder, data.feeTo, data.user],
     },
     bscTestnet: {
       url: 'https://data-seed-prebsc-1-s1.binance.org:8545',
-      accounts: [data.owner, data.oracleFeeder, data.feeTo],
+      accounts: [data.owner, data.oracleFeeder, data.feeTo, data.user],
     },
   },
 };

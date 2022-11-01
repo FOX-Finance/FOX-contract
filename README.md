@@ -42,7 +42,7 @@ TBD
 
 1. Approve `WETH` to `FoxFarm`.
 2. Approve `FOXS` to `FoxFarm`.
-3. Execute `openAndDepositAndBorrow` in `FoxFarm`.
+3. Execute `openAndDepositAndBorrow()` in `FoxFarm`.
 
 ## Redeeming
 
@@ -60,6 +60,9 @@ TBD
 +------------+   
        Shares
 ```
+
+1. Approve `FOX` to `FoxFarm`.
+2. Execute `close()` in `FoxFarm`.
 
 ## Recollateralization (+Bonus)
 
@@ -207,8 +210,10 @@ TBD
 
 # TODO (dev)
 - [x] Check additional conditions: total ratio, cdp ratio
-- [ ] (optional) WARNING or Restriction when protocol trust touches 100% collateral backing level
-- [ ] (optional) OracleFeeder.sol
+- [ ] BNB liquid staking -> stBNB as collateral
+- [ ] Airdrop: DAI, FRAX
+- [ ] WARNING or Restriction when protocol trust touches 100% collateral backing level
+- [ ] OracleFeeder.sol
 
 # TODO (tech)
 - [ ] Moralis
@@ -221,8 +226,7 @@ TBD
 
 # Roadmap
 - [ ] Zap (FOXS <-> BNB)
-- [ ] BNB liquid staking -> stBNB as collateral
-- [ ] LP as collateral (kind of liquid staking)
-- [ ] NFT Market & Auction
-- [ ] Swap
+- [ ] Multiple collateral: LP as collateral (kind of liquid staking)
+- [ ] NFT Market & Auction / Or adopting non-collateral lending feature
+- [ ] (Maybe) Swap
 -->
