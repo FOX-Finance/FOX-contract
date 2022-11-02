@@ -27,11 +27,11 @@ async function main() {
     console.log("\n<Attach>");
     await attach();
 
-    console.log("\n<Update FOX Price>");
-    await updateFoxPrice(10010);
+    // console.log("\n<Update FOX Price>");
+    // await updateFoxPrice(10010);
 
-    console.log("\n<Update Trust Level>");
-    await updateTrustLevel();
+    // console.log("\n<Update Trust Level>");
+    // await updateTrustLevel();
 }
 
 // run
