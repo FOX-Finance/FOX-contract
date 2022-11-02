@@ -182,7 +182,7 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         }
     }
 
-    //============ View Functions ============//
+    //============ Trust-related View Functions ============//
 
     function getStablePrice() external view returns (uint256) {
         return _stablePrice;
@@ -212,12 +212,24 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         return int256(currentTrustLevel() - trustLevel);
     }
 
+    //============ View Functions ============//
+
+    function requiredStableAmountFromDebt(uint256 debtAmount_)
+        public
+        view
+        returns (uint256 stableAmount_)
+    {
+        stableAmount_ =
+            (debtAmount_ * _DENOMINATOR) /
+            (_DENOMINATOR - trustLevel);
+    }
+
     function requiredShareAmountFromDebt(uint256 debtAmount_)
         public
         view
-        returns (uint256)
+        returns (uint256 shareAmount_)
     {
-        return
+        shareAmount_ =
             (debtAmount_ * trustLevel * _DENOMINATOR) /
             ((_DENOMINATOR - trustLevel) * _sharePrice);
     }
@@ -225,25 +237,27 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
     function requiredShareAmountFromStable(uint256 stableAmount_)
         public
         view
-        returns (uint256)
+        returns (uint256 shareAmount_)
     {
-        return (stableAmount_ * trustLevel) / (_sharePrice);
+        shareAmount_ = (stableAmount_ * trustLevel) / (_sharePrice);
     }
 
     function requiredDebtAmountFromShare(uint256 shareAmount_)
         public
         view
-        returns (uint256)
+        returns (uint256 debtAmount_)
     {
-        return (shareAmount_ * _sharePrice) / trustLevel;
+        debtAmount_ = (shareAmount_ * _sharePrice) / trustLevel;
     }
 
     function requiredDebtAmountFromStable(uint256 stableAmount_)
         public
         view
-        returns (uint256)
+        returns (uint256 debtAmount_)
     {
-        return (stableAmount_ * (_DENOMINATOR - trustLevel)) / (_DENOMINATOR);
+        debtAmount_ =
+            (stableAmount_ * (_DENOMINATOR - trustLevel)) /
+            (_DENOMINATOR);
     }
 
     function expectedMintAmount(uint256 debtAmount_, uint256 shareAmount_)

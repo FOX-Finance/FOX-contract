@@ -200,6 +200,26 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         _shareToken.safeTransfer(account_, shareAmount_);
     }
 
+    function _close(address account_, uint256 id_) internal override {
+        CollateralizedDebtPosition storage _cdp = cdps[id_];
+
+        if (_cdp.debt != 0) {
+            _repay(
+                account_,
+                id_,
+                _stableToken.requiredStableAmountFromDebt(_cdp.debt + _cdp.fee)
+            );
+        }
+        if (_cdp.collateral != 0) {
+            _withdraw(account_, id_, _cdp.collateral);
+        }
+
+        _burn(id_);
+        delete cdps[id_];
+
+        emit Close(account_, id_);
+    }
+
     //============ FOX Operations ============//
 
     function recollateralizeBorrowDebt(

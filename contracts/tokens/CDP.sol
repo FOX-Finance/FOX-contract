@@ -135,7 +135,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         );
     }
 
-    //============ View Functions ============//
+    //============ Health Functions ============//
 
     /**
      * @notice CDP risk indicator.
@@ -176,6 +176,8 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
             (totalDebt * _DENOMINATOR * _DENOMINATOR * _DENOMINATOR) /
             (totalCollateral * _collateralPrice * maxLTV);
     }
+
+    //============ View Functions ============//
 
     function borrowAmountToLTV(uint256 id_, uint256 multipliedLtv_)
         public
@@ -357,7 +359,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         emit Open(account_, id_);
     }
 
-    function _close(address account_, uint256 id_) internal {
+    function _close(address account_, uint256 id_) internal virtual {
         CollateralizedDebtPosition storage _cdp = cdps[id_];
 
         if (_cdp.debt != 0) {

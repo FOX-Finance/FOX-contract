@@ -56,7 +56,8 @@ interface IFOX {
 
     function updateStep(Step step_) external;
 
-    //============ View Functions ============//
+    //============ Trust-related View Functions ============//
+
     function getStablePrice() external view returns (uint256);
 
     function getSharePrice() external view returns (uint256);
@@ -67,25 +68,32 @@ interface IFOX {
 
     function deltaTrustLevel() external view returns (int256);
 
+    //============ View Functions ============//
+
+    function requiredStableAmountFromDebt(uint256 debtAmount_)
+        external
+        view
+        returns (uint256 stableAmount_);
+
     function requiredShareAmountFromDebt(uint256 debtAmount_)
         external
         view
-        returns (uint256);
+        returns (uint256 shareAmount_);
 
     function requiredShareAmountFromStable(uint256 stableAmount_)
         external
         view
-        returns (uint256);
+        returns (uint256 shareAmount_);
 
     function requiredDebtAmountFromShare(uint256 shareAmount_)
         external
         view
-        returns (uint256);
+        returns (uint256 debtAmount_);
 
     function requiredDebtAmountFromStable(uint256 stableAmount_)
         external
         view
-        returns (uint256);
+        returns (uint256 debtAmount_);
 
     function expectedMintAmount(uint256 debtAmount_, uint256 shareAmount_)
         external
