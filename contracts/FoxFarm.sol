@@ -273,7 +273,7 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         address account_,
         uint256 id_,
         uint256 amount_
-    ) external whenNotPaused returns (uint256 debtAmount_) {
+    ) external whenNotPaused onlyGloballyHealthy returns (uint256 debtAmount_) {
         _shareToken.safeTransferFrom(_msgSender(), address(this), amount_);
         debtAmount_ = _stableToken.buyback(account_, amount_);
 
@@ -289,6 +289,7 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         external
         whenNotPaused
         onlyCdpApprovedOrOwner(_msgSender(), id_)
+        onlyGloballyHealthy
         returns (uint256 debtAmount_)
     {
         address msgSender = _msgSender();
@@ -310,6 +311,7 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
     function buybackCoupon(address account_, uint256 amount_)
         external
         whenNotPaused
+        onlyGloballyHealthy
         returns (uint256 cid_, uint256 debtAmount_)
     {
         _shareToken.safeTransferFrom(_msgSender(), address(this), amount_);

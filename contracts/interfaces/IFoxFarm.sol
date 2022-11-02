@@ -2,7 +2,9 @@
 
 pragma solidity 0.8.9;
 
-interface IFoxFarm {
+import "./ICDP.sol";
+
+interface IFoxFarm is ICDP {
     //============ View Functions ============//
 
     function requiredShareAmountFromCollateralWithLtv(

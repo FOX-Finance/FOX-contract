@@ -184,6 +184,18 @@ We use [Ankr](https://www.ankr.com/bnb-liquid-staking/)'s aBNBc token.
 
 ---
 
+# Safety
+
+## Local CDP Health
+
+## Global Health
+
+## Trustlevel Upperbound
+
+$trustLevel + maxLTV <= 100%$
+
+---
+
 # Market
 
 ## NFT Market
@@ -222,15 +234,15 @@ TBD
 
 <!--
 # Proof-of-Work
-- [ ] Moralis
+- [x] Moralis for oracle
 - [x] Check additional conditions: total ratio, cdp ratio
 - [x] Oracle feeder
 - [ ] WARNING or Restriction when protocol trust touches 100% collateral backing level
+- [ ] Multiple collateral: LP as collateral (kind of liquid staking)
 - [ ] BNB liquid staking -> ankr's aBNBc as collateral:
        - https://www.ankr.com/docs/staking/for-integrators/smart-contract-api/bnb-api/#stake-bnb-and-claim-abnbc
        - https://www.ankr.com/docs/staking/for-integrators/smart-contract-api/bnb-api/#unstake-abnbc-and-get-bnb
        - https://www.ankr.com/docs/staking/for-integrators/smart-contract-api/bnb-api/#get-apr
-- [x] Airdrop: DAI, FRAX
 
 # Proof-of-Work (non-tech)
 - [ ] solidity-docgen
@@ -238,11 +250,12 @@ TBD
 - [ ] CI/CD
 
 # Roadmap
+- [ ] Airdrop: DAI, FRAX
 - [ ] Treasury.sol (Ministry of Finance) & Vesting.sol
-- [ ] Zap (FOXS <-> BNB)
-- [ ] Multiple collateral: LP as collateral (kind of liquid staking)
-- [ ] Multichain
+- [ ] Oracle confidence
 - [ ] Over the liquid: Collateral Hedge (maybe delta neutral)
 - [ ] NFT Market & Auction / Or adopting non-collateral lending feature
+- [ ] Zap (FOXS <-> BNB)
 - [ ] (optional) Swap
+- [ ] (optional) Multichain
 -->

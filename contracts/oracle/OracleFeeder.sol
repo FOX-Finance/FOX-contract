@@ -5,7 +5,7 @@ pragma solidity 0.8.9;
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "../interfaces/ICDP.sol";
+import "../interfaces/IFoxFarm.sol";
 import "../interfaces/IFOX.sol";
 
 import "../interfaces/IOracleFeeder.sol";
@@ -22,18 +22,22 @@ interface IInterval {
 contract OracleFeeder is IOracleFeeder, Pausable, Ownable {
     //============ Params ============//
 
-    ICDP public cdp; // FoxFarm
+    IFoxFarm public foxFarm; // FoxFarm
     IFOX public fox;
 
     uint256 private constant _TIME_PERIOD = 1 hours;
+
+    uint256 private constant _DENOMINATOR = 10000;
 
     //============ Initialize ============//
 
     constructor() {}
 
-    function initialize(address cdp_, address fox_) external onlyOwner {
-        cdp = ICDP(cdp_);
+    function initialize(address foxFarm_, address fox_) external onlyOwner {
+        foxFarm = IFoxFarm(foxFarm_);
         fox = IFOX(fox_);
+
+        emit Initialize(foxFarm_, fox_);
     }
 
     //============ Pausable ============//
@@ -86,7 +90,7 @@ contract OracleFeeder is IOracleFeeder, Pausable, Ownable {
         uint256 newCollateralPrice,
         uint256 confidence
     ) internal onlyOwner {
-        cdp.updateCollateralPrice(newCollateralPrice, confidence);
+        foxFarm.updateCollateralPrice(newCollateralPrice, confidence);
     }
 
     function _updateStablePrice(uint256 newStablePrice, uint256 confidence)

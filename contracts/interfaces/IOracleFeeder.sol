@@ -3,6 +3,10 @@
 pragma solidity 0.8.9;
 
 interface IOracleFeeder {
+    //============ Events ============//
+
+    event Initialize(address indexed foxFarm, address indexed fox);
+
     //============ Pausable ============//
 
     function pause() external;

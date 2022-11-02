@@ -70,11 +70,17 @@ interface ICDP {
 
     //============ View Functions ============//
 
+    function maxLTV() external view returns (uint256);
+
     function isSafe(uint256 id_) external view returns (bool);
 
     function currentLTV(uint256 id_) external view returns (uint256 ltv);
 
+    function globalLTV() external view returns (uint256 ltv);
+
     function healthFactor(uint256 id_) external view returns (uint256 health);
+
+    function globalHealthFactor() external view returns (uint256 health);
 
     //============ CDP Operations ============//
 

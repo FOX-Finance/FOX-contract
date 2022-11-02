@@ -57,6 +57,14 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         _;
     }
 
+    modifier onlyGloballyHealthy() {
+        require(
+            globalHealthFactor() < _DENOMINATOR,
+            "CDP::onlyGloballyHealthy: Not healty."
+        );
+        _;
+    }
+
     //============ Initialize ============//
 
     constructor(
@@ -141,9 +149,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
      * @notice CDP risk indicator.
      */
     function isSafe(uint256 id_) public view returns (bool) {
-        return
-            (healthFactor(id_) < _DENOMINATOR) &&
-            (globalHealthFactor() < _DENOMINATOR);
+        return (healthFactor(id_) < _DENOMINATOR);
     }
 
     /**
@@ -154,6 +160,12 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         ltv =
             (_cdp.debt * _DENOMINATOR * _DENOMINATOR) /
             (_cdp.collateral * _collateralPrice);
+    }
+
+    function globalLTV() public view virtual returns (uint256 ltv) {
+        ltv =
+            (totalDebt * _DENOMINATOR * _DENOMINATOR) /
+            (totalCollateral * _collateralPrice);
     }
 
     /**
@@ -348,7 +360,11 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
 
     //============ Internal Functions ============//
 
-    function _open(address account_) internal returns (uint256 id_) {
+    function _open(address account_)
+        internal
+        onlyGloballyHealthy
+        returns (uint256 id_)
+    {
         id_ = id++;
 
         _safeMint(account_, id_); // mint NFT
@@ -420,7 +436,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         address account_,
         uint256 id_,
         uint256 amount_
-    ) internal virtual {
+    ) internal virtual onlyGloballyHealthy {
         CollateralizedDebtPosition storage _cdp = cdps[id_];
 
         _cdp.debt += amount_;

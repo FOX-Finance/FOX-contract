@@ -19,6 +19,8 @@ interface IFOX {
     event SetBurnFeeRatio(uint256 prevBurnFeeRatio, uint256 currBurnFeeRatio);
     event SetBonusRatio(uint256 prevBonusRatio, uint256 currBonusRatio);
 
+    event Initialize(address indexed foxFarm);
+
     //============ Owner ============//
 
     function setFeeTo(address newFeeTo) external;
@@ -57,6 +59,8 @@ interface IFOX {
     function updateStep(Step step_) external;
 
     //============ Trust-related View Functions ============//
+
+    function trustLevel() external view returns (uint256);
 
     function getStablePrice() external view returns (uint256);
 

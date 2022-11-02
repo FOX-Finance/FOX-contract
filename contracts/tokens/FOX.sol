@@ -14,6 +14,10 @@ import "../interfaces/IFOXS.sol";
 
 import "../interfaces/IFOX.sol";
 
+interface IFoxFarm {
+    function maxLTV() external view returns (uint256);
+}
+
 /**
  * @title Fractional Over Collateralized Stablecoin (FOX)
  * @author Luke Park (lukepark327@gmail.com)
@@ -26,6 +30,7 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
 
     IERC20 private immutable _debtToken;
     IERC20 private immutable _shareToken;
+    IFoxFarm private _foxFarm;
 
     uint256 private constant _TARGET_PRICE = 10000; // $1
     uint256 private _stablePrice = _TARGET_PRICE;
@@ -75,6 +80,12 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         _burnFeeRatio = burnFeeRatio_;
 
         _bonusRatio = bonusRatio_;
+    }
+
+    function initialize(address foxFarm_) external onlyOwner {
+        _foxFarm = IFoxFarm(foxFarm_);
+
+        emit Initialize(foxFarm_);
     }
 
     //============ Owner ============//
@@ -163,7 +174,10 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
     function _updateTrustLevel() internal interval(_TIME_PERIOD) {
         if (deltaTrust() < 0) {
             trustLevel -= step;
-        } else {
+        } else if (
+            (address(_foxFarm) == address(0)) ||
+            (_foxFarm.maxLTV() + trustLevel + step <= _DENOMINATOR)
+        ) {
             trustLevel += step;
         }
     }
@@ -194,8 +208,8 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
 
     function currentTrustLevel() public view returns (uint256) {
         return
-            (_debtToken.balanceOf(address(this)) * _DENOMINATOR) /
-            totalSupply();
+            ((totalSupply() - _debtToken.balanceOf(address(this))) *
+                _DENOMINATOR) / totalSupply();
     }
 
     /**
