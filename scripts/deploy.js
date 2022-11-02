@@ -85,7 +85,7 @@ async function init() {
 
     //============ Ownership ============//
 
-    process.stdout.write("[SIN] Change SIN's owner to FoxFarm");
+    process.stdout.write("[SIN]\t\tChange SIN's owner to FoxFarm");
     txRes = await contract.sin.connect(signer.owner).transferOwnership(contract.foxFarm.address);
     await txRes.wait();
     console.log(" - complete");
@@ -96,9 +96,18 @@ async function init() {
     // process.stdout.write("[Coupon] Change Coupon's owner to FoxFarm");
     // console.log(" - complete");
 
+    //============ FOX ============//
+
+    process.stdout.write("[FOX]\t\tSubmit FoxFarm");
+    txRes = await contract.fox.connect(signer.owner).initialize(
+        contract.foxFarm.address
+    );
+    await txRes.wait();
+    console.log(" - complete");
+
     //============ Oracle ============//
 
-    process.stdout.write("[OracleFeeder] Submit FoxFarm and FOX");
+    process.stdout.write("[OracleFeeder]\tSubmit FoxFarm and FOX");
     txRes = await contract.oracleFeeder.connect(signer.bot).initialize(
         contract.foxFarm.address,
         contract.fox.address

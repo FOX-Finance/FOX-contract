@@ -1,10 +1,8 @@
 require('dotenv').config();
-const address = { bsc: null };
-address.bsc = require('../address.bsc.json');
 const axios = require('axios');
 
 const web3ApiKey = process.env.API_KEY_MORALIS;
-const WBNB = address.bsc.WBNB;
+const WBNB = process.env.ADDRESS_WBNB;
 
 const options = {
     method: 'GET',

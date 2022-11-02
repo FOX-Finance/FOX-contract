@@ -22,10 +22,14 @@ async function set() {
     [signer.owner, signer.bot, signer.feeTo, signer.user] = await ethers.getSigners(); // main/test-net
 
     let balanceOfOwner = await signer.owner.getBalance() / (10 ** 18);
+    let balanceOfBot = await signer.bot.getBalance() / (10 ** 18);
+    let balanceOfFeeTo = await signer.feeTo.getBalance() / (10 ** 18);
+    let balanceOfUser = await signer.user.getBalance() / (10 ** 18);
+
     console.log("Owner:\t", signer.owner.address, `(${balanceOfOwner} ETH)`);
-    console.log("Bot:\t", signer.bot.address);
-    console.log("FeeTo:\t", signer.feeTo.address);
-    console.log("User:\t", signer.user.address);
+    console.log("Bot:\t", signer.bot.address, `(${balanceOfBot} ETH)`);
+    console.log("FeeTo:\t", signer.feeTo.address, `(${balanceOfFeeTo} ETH)`);
+    console.log("User:\t", signer.user.address, `(${balanceOfUser} ETH)`);
 }
 
 async function attach() {

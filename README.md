@@ -206,13 +206,13 @@ $trustLevel + maxLTV <= 100%$
 
 # How to Use
 
-### 0. Requirements
+## 0. Requirements
 
 ```bash
 $ npm install
 ```
 
-### 1. Set `private.json`
+## 1. Set `private.json`
 
 ```js
 {
@@ -222,15 +222,58 @@ $ npm install
 
 See `config_sample.json` for example.
 
-### 2. Deploy
+## 2. Deploy
 
 ```bash
 $ npx hardhat run scripts/deploy.js
 ```
 
-### 3. Test (Optional)
+## 3. Test (Optional)
 
-TBD
+### Terminal #1
+
+Run local node (forking from BSC testnet).
+
+```bash
+$ npx hardhat node --fork https://data-seed-prebsc-1-s1.binance.org:8545
+```
+
+### Terminal #2
+
+Enter the hardhat console.
+
+```bash
+$ npx hardhat console --network localhost
+```
+
+### Console
+
+```bash
+# View
+$ await ethers.provider.getBlockNumber();
+$ await ethers.provider.getBlock();
+
+# Mining
+$ await network.provider.send("evm_setAutomine", [false]);
+$ await network.provider.send("evm_setIntervalMining", [1000]);
+
+# Increase Time
+$ await network.provider.send("evm_increaseTime", [10000]);
+```
+
+### Test
+
+Prefix `dotenv -e .env.test --`.
+
+```bash
+$ dotenv -e .env.test -- npx hardhat run scripts/deploy.js --network localhost
+```
+
+Deploy:
+
+```bash
+$ npx hardhat run scripts/deploy.js --network localhost
+```
 
 <!--
 # Proof-of-Work
