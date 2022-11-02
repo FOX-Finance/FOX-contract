@@ -22,16 +22,18 @@ interface IInterval {
 contract OracleFeeder is IOracleFeeder, Pausable, Ownable {
     //============ Params ============//
 
-    ICDP private immutable _cdp;
-    IFOX private immutable _fox;
+    ICDP public cdp; // FoxFarm
+    IFOX public fox;
 
     uint256 private constant _TIME_PERIOD = 1 hours;
 
     //============ Initialize ============//
 
-    constructor(address cdp_, address fox_) {
-        _cdp = ICDP(cdp_);
-        _fox = IFOX(fox_);
+    constructor() {}
+
+    function initialize(address cdp_, address fox_) external onlyOwner {
+        cdp = ICDP(cdp_);
+        fox = IFOX(fox_);
     }
 
     //============ Pausable ============//
@@ -84,17 +86,17 @@ contract OracleFeeder is IOracleFeeder, Pausable, Ownable {
         uint256 newCollateralPrice,
         uint256 confidence
     ) internal onlyOwner {
-        _cdp.updateCollateralPrice(newCollateralPrice, confidence);
+        cdp.updateCollateralPrice(newCollateralPrice, confidence);
     }
 
     function _updateStablePrice(uint256 newStablePrice, uint256 confidence)
         internal
         onlyOwner
     {
-        if (IInterval(address(_fox)).isPassInterval(_TIME_PERIOD)) {
-            _fox.updateStablePriceWithTrustLevel(newStablePrice, confidence);
+        if (IInterval(address(fox)).isPassInterval(_TIME_PERIOD)) {
+            fox.updateStablePriceWithTrustLevel(newStablePrice, confidence);
         } else {
-            _fox.updateStablePrice(newStablePrice, confidence);
+            fox.updateStablePrice(newStablePrice, confidence);
         }
     }
 
@@ -102,6 +104,6 @@ contract OracleFeeder is IOracleFeeder, Pausable, Ownable {
         internal
         onlyOwner
     {
-        _fox.updateSharePrice(newSharePrice, confidence);
+        fox.updateSharePrice(newSharePrice, confidence);
     }
 }
