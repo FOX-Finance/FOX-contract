@@ -70,6 +70,15 @@ interface ICDP {
 
     //============ View Functions ============//
 
+    function cdpInfo(uint256 id_)
+        external
+        view
+        returns (
+            uint256 collateralAmount_,
+            uint256 ltv_,
+            uint256 fee_
+        );
+
     function maxLTV() external view returns (uint256);
 
     function isSafe(uint256 id_) external view returns (bool);

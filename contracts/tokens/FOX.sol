@@ -239,6 +239,17 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
             (_DENOMINATOR - trustLevel);
     }
 
+    /// @dev Uses to `repay()` in `close()`. Must consider burn fee.
+    function requiredStableAmountFromDebtWithFee(uint256 debtAmount_)
+        public
+        view
+        returns (uint256 stableAmount_)
+    {
+        stableAmount_ =
+            (debtAmount_ * _DENOMINATOR * _DENOMINATOR) /
+            ((_DENOMINATOR - trustLevel) * (_DENOMINATOR - _burnFeeRatio));
+    }
+
     function requiredShareAmountFromDebt(uint256 debtAmount_)
         public
         view
@@ -255,6 +266,17 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         returns (uint256 shareAmount_)
     {
         shareAmount_ = (stableAmount_ * trustLevel) / (_sharePrice);
+    }
+
+    /// @dev Uses to `borrow()`. Must consider mint fee.
+    function requiredShareAmountFromStableWithFee(uint256 stableAmount_)
+        public
+        view
+        returns (uint256 shareAmount_)
+    {
+        shareAmount_ =
+            (stableAmount_ * _DENOMINATOR * trustLevel) /
+            ((_DENOMINATOR - _mintFeeRatio) * _sharePrice);
     }
 
     function requiredDebtAmountFromShare(uint256 shareAmount_)
@@ -275,6 +297,17 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         debtAmount_ =
             (stableAmount_ * (_DENOMINATOR - trustLevel)) /
             (_DENOMINATOR);
+    }
+
+    /// @dev Uses to `borrow()`. Must consider mint fee.
+    function requiredDebtAmountFromStableWithFee(uint256 stableAmount_)
+        public
+        view
+        returns (uint256 debtAmount_)
+    {
+        debtAmount_ =
+            (stableAmount_ * (_DENOMINATOR - trustLevel)) /
+            (_DENOMINATOR - _mintFeeRatio);
     }
 
     function expectedMintAmount(uint256 debtAmount_, uint256 shareAmount_)
@@ -299,7 +332,16 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         stableAmount_ =
             _requiredDebtAmount +
             (_requiredShareAmount * _sharePrice) /
-            _DENOMINATOR;
+            (_DENOMINATOR);
+    }
+
+    function expectedMintAmountWithFee(
+        uint256 debtAmount_,
+        uint256 shareAmount_
+    ) public view returns (uint256 stableAmount_, uint256 mintFee_) {
+        stableAmount_ = expectedMintAmount(debtAmount_, shareAmount_);
+        mintFee_ = (stableAmount_ * _mintFeeRatio) / _DENOMINATOR;
+        stableAmount_ -= mintFee_;
     }
 
     function expectedRedeemAmount(uint256 stableAmount_)
@@ -311,6 +353,22 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         shareAmount_ = requiredShareAmountFromStable(stableAmount_);
     }
 
+    function expectedRedeemAmountWithFee(uint256 stableAmount_)
+        public
+        view
+        returns (
+            uint256 debtAmount_,
+            uint256 shareAmount_,
+            uint256 burnFee_
+        )
+    {
+        burnFee_ = (stableAmount_ * _burnFeeRatio) / _DENOMINATOR;
+        (debtAmount_, shareAmount_) = expectedRedeemAmount(
+            stableAmount_ - burnFee_
+        );
+    }
+
+    // TODO: fee
     function shortfallRecollateralizeAmount()
         public
         view
@@ -322,6 +380,7 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
             _debtToken.balanceOf(address(this));
     }
 
+    // TODO: fee
     function surplusBuybackAmount() public view returns (uint256 debtAmount_) {
         return
             _debtToken.balanceOf(address(this)) -
@@ -329,6 +388,7 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
             _DENOMINATOR;
     }
 
+    // TODO: fee
     function exchangedShareAmountFromDebt(uint256 debtAmount_)
         public
         view
@@ -337,6 +397,7 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         shareAmount_ = (debtAmount_ * _DENOMINATOR) / (_sharePrice);
     }
 
+    // TODO: fee
     function exchangedDebtAmountFromShare(uint256 shareAmount_)
         public
         view
@@ -358,17 +419,20 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         _debtToken.safeTransferFrom(_fromAccount, address(this), debtAmount_);
         _shareToken.safeTransferFrom(_fromAccount, address(this), shareAmount_);
 
-        // calculate
-        stableAmount_ = expectedMintAmount(debtAmount_, shareAmount_);
-
-        // receive
-        uint256 _fee = (stableAmount_ * _mintFeeRatio) / _DENOMINATOR;
+        // fee
         if (_feeTo != address(0)) {
+            uint256 _fee;
+            (stableAmount_, _fee) = expectedMintAmountWithFee(
+                debtAmount_,
+                shareAmount_
+            );
             _mint(_feeTo, _fee);
-            _mint(toAccount_, stableAmount_ - _fee);
         } else {
-            _mint(toAccount_, stableAmount_);
+            stableAmount_ = expectedMintAmount(debtAmount_, shareAmount_);
         }
+
+        // calculate
+        _mint(toAccount_, stableAmount_);
     }
 
     function redeem(address toAccount_, uint256 stableAmount_)
@@ -379,28 +443,20 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         // send
         _burn(_msgSender(), stableAmount_);
 
-        // calculate
-        (debtAmount_, shareAmount_) = expectedRedeemAmount(stableAmount_);
+        // fee
+        if (_feeTo != address(0)) {
+            uint256 _fee;
+            (debtAmount_, shareAmount_, _fee) = expectedRedeemAmountWithFee(
+                stableAmount_
+            );
+            _mint(_feeTo, _fee);
+        } else {
+            (debtAmount_, shareAmount_) = expectedRedeemAmount(stableAmount_);
+        }
 
         // receive
-        if (_feeTo != address(0)) {
-            uint256 _feeDebtAmount = (debtAmount_ * _burnFeeRatio) /
-                _DENOMINATOR;
-            uint256 _feeShareAmount = (shareAmount_ * _burnFeeRatio) /
-                _DENOMINATOR;
-            (debtAmount_, shareAmount_) = (
-                debtAmount_ - _feeDebtAmount,
-                shareAmount_ - _feeShareAmount
-            );
-
-            _debtToken.safeTransfer(_feeTo, _feeDebtAmount);
-            _debtToken.safeTransfer(toAccount_, debtAmount_);
-            _shareToken.safeTransfer(_feeTo, _feeShareAmount);
-            _shareToken.safeTransfer(toAccount_, shareAmount_);
-        } else {
-            _debtToken.safeTransfer(toAccount_, debtAmount_);
-            _shareToken.safeTransfer(toAccount_, shareAmount_);
-        }
+        _debtToken.safeTransfer(toAccount_, debtAmount_);
+        _shareToken.safeTransfer(toAccount_, shareAmount_);
     }
 
     //============ Recallateralize & Buyback ============//

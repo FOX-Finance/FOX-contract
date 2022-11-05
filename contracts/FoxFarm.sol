@@ -77,101 +77,54 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
 
     //============ View Functions ============//
 
-    function requiredShareAmountFromCollateralWithLtv(
+    function _newDebtAmountToLtv(
         uint256 id_,
-        uint256 collateralAmount_,
+        uint256 newCollateralAmount_,
+        uint256 ltv_
+    ) internal view returns (uint256 newDebtAmount_) {
+        CollateralizedDebtPosition memory _cdp = cdps[id_];
+        newDebtAmount_ =
+            (ltv_ * (_cdp.collateral + newCollateralAmount_)) /
+            _DENOMINATOR -
+            (_cdp.debt + _cdp.fee);
+    }
+
+    function requiredShareAmountFromCollateralToLtv(
+        uint256 id_,
+        uint256 newCollateralAmount_,
         uint256 ltv_
     ) public view returns (uint256 shareAmount_) {
+        uint256 _debtAmount;
         if (id_ >= id) {
-            shareAmount_ = _stableToken.requiredShareAmountFromDebt(
-                (collateralAmount_ * _collateralPrice * ltv_) /
-                    (_DENOMINATOR * _DENOMINATOR)
-            );
+            _debtAmount =
+                (newCollateralAmount_ * _collateralPrice * ltv_) /
+                (_DENOMINATOR * _DENOMINATOR);
         } else {
-            // TODO: toLtv
-            // CollateralizedDebtPosition memory _cdp = cdps[id_];
-            // shareAmount_ = _stableToken.requiredShareAmountFromDebt(
-            //     ((_cdp.collateral + collateralAmount_) *
-            //         _collateralPrice *
-            //         ltv_) /
-            //         (_DENOMINATOR * _DENOMINATOR) +
-            //         (_cdp.debt + _cdp.fee)
-            // );
+            _debtAmount = _newDebtAmountToLtv(id_, newCollateralAmount_, ltv_);
         }
+
+        shareAmount_ = _stableToken.requiredShareAmountFromDebt(_debtAmount);
     }
 
-    function requiredCollateralAmountFromShareWithLtv(
+    function requiredCollateralAmountFromShareToLtv(
         uint256 id_,
-        uint256 shareAmount_,
+        uint256 newShareAmount_,
         uint256 ltv_
     ) public view returns (uint256 collateralAmount_) {
-        if (id_ >= id) {
-            collateralAmount_ =
-                (_stableToken.requiredDebtAmountFromShare(shareAmount_) *
-                    _DENOMINATOR *
-                    _DENOMINATOR) /
-                (ltv_ * _collateralPrice);
-        } else {
-            // TODO: toLtv
-            // CollateralizedDebtPosition memory _cdp = cdps[id_];
-            // collateralAmount_ =
-            //     (_stableToken.requiredDebtAmountFromShare(shareAmount_) *
-            //         _DENOMINATOR *
-            //         _DENOMINATOR +
-            //         _cdp.debt +
-            //         _cdp.fee) /
-            //     (ltv_ * _collateralPrice) +
-            //     _cdp.collateral;
-        }
-    }
+        uint256 _debtAmount = _stableToken.requiredDebtAmountFromShare(
+            newShareAmount_
+        );
 
-    function requiredCollateralAmountFromStableWithLtv(
-        uint256 id_,
-        uint256 stableAmount_,
-        uint256 ltv_
-    ) public view returns (uint256 collateralAmount_) {
         if (id_ >= id) {
             collateralAmount_ =
-                (_stableToken.requiredDebtAmountFromStable(stableAmount_) *
-                    _DENOMINATOR *
-                    _DENOMINATOR) /
+                (_debtAmount * _DENOMINATOR * _DENOMINATOR) /
                 (ltv_ * _collateralPrice);
         } else {
             CollateralizedDebtPosition memory _cdp = cdps[id_];
             collateralAmount_ =
-                (_stableToken.requiredDebtAmountFromStable(stableAmount_) *
-                    _DENOMINATOR *
-                    _DENOMINATOR +
-                    _cdp.debt +
-                    _cdp.fee) /
-                (ltv_ * _collateralPrice) +
+                ((_cdp.debt + _debtAmount) * _DENOMINATOR * _DENOMINATOR) /
+                (ltv_ * _collateralPrice) -
                 _cdp.collateral;
-        }
-    }
-
-    function expectedMintAmountWithLtv(
-        uint256 id_,
-        uint256 collateralAmount_,
-        uint256 ltv_,
-        uint256 shareAmount_
-    ) public view returns (uint256 stableAmount_) {
-        if (id_ >= id) {
-            stableAmount_ = _stableToken.expectedMintAmount(
-                (collateralAmount_ * _collateralPrice * ltv_) /
-                    (_DENOMINATOR * _DENOMINATOR),
-                shareAmount_
-            );
-        } else {
-            CollateralizedDebtPosition memory _cdp = cdps[id_];
-            stableAmount_ = _stableToken.expectedMintAmount(
-                ((collateralAmount_ + _cdp.collateral) *
-                    _collateralPrice *
-                    ltv_) /
-                    (_DENOMINATOR * _DENOMINATOR) +
-                    _cdp.debt +
-                    _cdp.fee,
-                shareAmount_
-            );
         }
     }
 
@@ -181,86 +134,48 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         uint256 ltv_,
         uint256 newShareAmount_
     ) public view returns (uint256 newStableAmount_) {
+        uint256 _debtAmount;
         if (id_ >= id) {
-            newStableAmount_ = _stableToken.expectedMintAmount(
+            _debtAmount =
                 (newCollateralAmount_ * _collateralPrice * ltv_) /
-                    (_DENOMINATOR * _DENOMINATOR),
-                newShareAmount_
-            );
+                (_DENOMINATOR * _DENOMINATOR);
         } else {
-            CollateralizedDebtPosition memory _cdp = cdps[id_];
-            newStableAmount_ = _stableToken.expectedMintAmount(
-                (ltv_ *
-                    (_cdp.collateral + newCollateralAmount_) *
-                    _collateralPrice) /
-                    (_DENOMINATOR * _DENOMINATOR) -
-                    (_cdp.debt + _cdp.fee),
-                newShareAmount_
-            );
+            _debtAmount = _newDebtAmountToLtv(id_, newCollateralAmount_, ltv_);
         }
-    }
 
-    function expectedRedeemAmountWithLtv(
-        uint256 id_,
-        uint256 stableAmount_,
-        uint256 ltv_
-    ) public view returns (uint256 collateralAmount_, uint256 shareAmount_) {
-        if (id_ >= id) {
-            collateralAmount_ =
-                (_stableToken.requiredDebtAmountFromStable(stableAmount_) *
-                    _DENOMINATOR *
-                    _DENOMINATOR) /
-                (ltv_ * _collateralPrice);
-            shareAmount_ = _stableToken.requiredShareAmountFromStable(
-                stableAmount_
-            );
-        } else {
-            CollateralizedDebtPosition memory _cdp = cdps[id_];
-            collateralAmount_ =
-                (_stableToken.requiredDebtAmountFromStable(stableAmount_) *
-                    _DENOMINATOR *
-                    _DENOMINATOR +
-                    _cdp.debt +
-                    _cdp.fee) /
-                (ltv_ * _collateralPrice) +
-                _cdp.collateral;
-            shareAmount_ = _stableToken.requiredShareAmountFromStable(
-                stableAmount_
-            );
-        }
+        (newStableAmount_, ) = _stableToken.expectedMintAmountWithFee(
+            _debtAmount,
+            newShareAmount_
+        );
     }
 
     function expectedRedeemAmountToLtv(
         uint256 id_,
-        uint256 paidStableAmount_,
+        uint256 collectedStableAmount_,
         uint256 ltv_
     )
         public
         view
-        returns (uint256 collateralAmountToWithdraw_, uint256 newShareAmount_)
+        returns (uint256 emittedCollateralAmount_, uint256 emittedShareAmount_)
     {
+        uint256 _debtAmount;
+        (_debtAmount, emittedShareAmount_, ) = _stableToken
+            .expectedRedeemAmountWithFee(collectedStableAmount_);
+
         if (id_ >= id) {
-            collateralAmountToWithdraw_ =
-                (_stableToken.requiredDebtAmountFromStable(paidStableAmount_) *
-                    _DENOMINATOR *
-                    _DENOMINATOR) /
+            emittedCollateralAmount_ =
+                (_debtAmount * _DENOMINATOR * _DENOMINATOR) /
                 (ltv_ * _collateralPrice);
-            newShareAmount_ = _stableToken.requiredShareAmountFromStable(
-                paidStableAmount_
-            );
         } else {
             CollateralizedDebtPosition memory _cdp = cdps[id_];
-            collateralAmountToWithdraw_ =
-                _cdp.collateral - (_stableToken.requiredDebtAmountFromStable(paidStableAmount_) *
-                    _DENOMINATOR *
-                    _DENOMINATOR) /
+            emittedCollateralAmount_ =
+                _cdp.collateral -
+                ((_cdp.debt - _debtAmount) * _DENOMINATOR * _DENOMINATOR) /
                 (ltv_ * _collateralPrice);
-            newShareAmount_ = _stableToken.requiredShareAmountFromStable(
-                paidStableAmount_
-            );
         }
     }
 
+    // TODO: toLtv
     function exchangedShareAmountFromCollateralWithLtv(
         uint256 id_,
         uint256 collateralAmount_,
@@ -284,6 +199,7 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         }
     }
 
+    // TODO: toLtv
     function exchangedCollateralAmountFromShareWithLtv(
         uint256 id_,
         uint256 shareAmount_,
@@ -315,12 +231,11 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         uint256 id_,
         uint256 amount_ // stableAmount
     ) internal override {
-        uint256 debtAmount_ = _stableToken.requiredDebtAmountFromStable(
+        uint256 debtAmount_ = _stableToken.requiredDebtAmountFromStableWithFee(
             amount_
         );
-        uint256 shareAmount_ = _stableToken.requiredShareAmountFromStable(
-            amount_
-        );
+        uint256 shareAmount_ = _stableToken
+            .requiredShareAmountFromStableWithFee(amount_);
 
         super._borrow(address(this), id_, debtAmount_);
 
@@ -357,7 +272,9 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
             _repay(
                 account_,
                 id_,
-                _stableToken.requiredStableAmountFromDebt(_cdp.debt + _cdp.fee)
+                _stableToken.requiredStableAmountFromDebtWithFee(
+                    _cdp.debt + _cdp.fee
+                )
             );
         }
         if (_cdp.collateral != 0) {

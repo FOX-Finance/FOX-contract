@@ -202,6 +202,21 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
 
     //============ View Functions ============//
 
+    function cdpInfo(uint256 id_)
+        external
+        view
+        returns (
+            uint256 collateralAmount_,
+            uint256 ltv_,
+            uint256 fee_
+        )
+    {
+        CollateralizedDebtPosition memory _cdp = cdps[id_];
+        collateralAmount_ = _cdp.collateral;
+        ltv_ = currentLTV(id_);
+        fee_ = _cdp.fee;
+    }
+
     function getCollateralPrice() external view returns (uint256) {
         return _collateralPrice;
     }

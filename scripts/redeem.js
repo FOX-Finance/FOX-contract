@@ -61,10 +61,10 @@ async function getExpectedRedeemAmount(id, stableAmount, ltv) {
         ltv
     );
     console.log(" - complete:");
-    console.log("\tcollateralAmount:\t", res.collateralAmountToWithdraw_ / (10 ** 18));
-    console.log("\tshareAmount:\t\t", res.newShareAmount_ / (10 ** 18));
+    console.log("\tcollateralAmount:\t", res.emittedCollateralAmount_ / (10 ** 18));
+    console.log("\tshareAmount:\t\t", res.emittedShareAmount_ / (10 ** 18));
 
-    return { 'collateralAmount': res.collateralAmountToWithdraw_, 'shareAmount': res.newShareAmount_ };
+    return { 'collateralAmount': res.emittedCollateralAmount_, 'shareAmount': res.emittedShareAmount_ };
 }
 
 async function getWithdrawAmountToLTV(id, ltv, debtAmount) {
@@ -114,8 +114,8 @@ async function main() {
     console.log("\n<Expected redeem amount>");
     const res = await getExpectedRedeemAmount(
         BigInt(0),
-        BigInt(0.002 * (10 ** 18)),
-        BigInt(30 * 100)
+        BigInt(4 * (10 ** 18)),
+        BigInt(40 * 100)
     );
     const redeemCollateralAmount = res.collateralAmount;
 
@@ -129,7 +129,7 @@ async function main() {
     console.log("\n<Redeem FOX>");
     await redeemFOX(
         BigInt(0), // id
-        BigInt(0.002 * (10 ** 18)), // repayAmount
+        BigInt(4 * (10 ** 18)), // repayAmount
         BigInt(redeemCollateralAmount) // TODO: apply fee
     );
 

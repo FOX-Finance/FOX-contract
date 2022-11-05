@@ -79,12 +79,23 @@ interface IFOX {
         view
         returns (uint256 stableAmount_);
 
+    function requiredStableAmountFromDebtWithFee(uint256 debtAmount_)
+        external
+        view
+        returns (uint256 stableAmount_);
+
     function requiredShareAmountFromDebt(uint256 debtAmount_)
         external
         view
         returns (uint256 shareAmount_);
 
     function requiredShareAmountFromStable(uint256 stableAmount_)
+        external
+        view
+        returns (uint256 shareAmount_);
+
+    /// @dev Uses to `borrow()`. Must consider mint fee.
+    function requiredShareAmountFromStableWithFee(uint256 stableAmount_)
         external
         view
         returns (uint256 shareAmount_);
@@ -99,15 +110,34 @@ interface IFOX {
         view
         returns (uint256 debtAmount_);
 
+    function requiredDebtAmountFromStableWithFee(uint256 stableAmount_)
+        external
+        view
+        returns (uint256 debtAmount_);
+
     function expectedMintAmount(uint256 debtAmount_, uint256 shareAmount_)
         external
         view
         returns (uint256 stableAmount_);
 
+    function expectedMintAmountWithFee(
+        uint256 debtAmount_,
+        uint256 shareAmount_
+    ) external view returns (uint256 stableAmount_, uint256 mintFee_);
+
     function expectedRedeemAmount(uint256 stableAmount_)
         external
         view
         returns (uint256 debtAmount_, uint256 shareAmount_);
+
+    function expectedRedeemAmountWithFee(uint256 stableAmount_)
+        external
+        view
+        returns (
+            uint256 debtAmount_,
+            uint256 shareAmount_,
+            uint256 burnFee_
+        );
 
     function shortfallRecollateralizeAmount()
         external

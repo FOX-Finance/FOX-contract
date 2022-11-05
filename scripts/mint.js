@@ -58,7 +58,7 @@ async function balances() {
 
 async function getRequiredFoxsAmount(collateralAmount, ltv) {
     process.stdout.write("[FoxFarm] Get required FOXS");
-    const shareAmount = await contract.foxFarm.requiredShareAmountFromCollateralWithLtv(
+    const shareAmount = await contract.foxFarm.requiredShareAmountFromCollateralToLtv(
         ethers.constants.MaxUint256,
         collateralAmount,
         ltv
@@ -70,7 +70,7 @@ async function getRequiredFoxsAmount(collateralAmount, ltv) {
 
 async function getRequiredWethAmount(shareAmount, ltv) {
     process.stdout.write("[FoxFarm] Get required WETH");
-    const collateralAmount = await contract.foxFarm.requiredCollateralAmountFromShareWithLtv(
+    const collateralAmount = await contract.foxFarm.requiredCollateralAmountFromShareToLtv(
         ethers.constants.MaxUint256,
         shareAmount,
         ltv
@@ -133,8 +133,7 @@ async function main() {
     console.log("\n<Get required WETH amount>");
     const requiredCollateralAmount = await getRequiredWethAmount(shareAmount, ltv);
 
-    // TODO: requiredCollateralAmount == collateralAmount, but...
-    console.log("\n<TODO: Mitigate floating error>");
+    console.log("\n<Compare results>");
     const expectedStableAmount1 = await getExpectedFoxAmount(collateralAmount, shareAmount, ltv);
     const expectedStableAmount2 = await getExpectedFoxAmount(requiredCollateralAmount, shareAmount, ltv);
 

@@ -7,24 +7,17 @@ import "./ICDP.sol";
 interface IFoxFarm is ICDP {
     //============ View Functions ============//
 
-    function requiredShareAmountFromCollateralWithLtv(
+    function requiredShareAmountFromCollateralToLtv(
         uint256 id_,
-        uint256 collateralAmount_,
+        uint256 newCollateralAmount_,
         uint256 ltv_
     ) external view returns (uint256 shareAmount_);
 
-    function requiredCollateralAmountFromShareWithLtv(
+    function requiredCollateralAmountFromShareToLtv(
         uint256 id_,
-        uint256 shareAmount_,
+        uint256 newShareAmount_,
         uint256 ltv_
     ) external view returns (uint256 collateralAmount_);
-
-    function expectedMintAmountWithLtv(
-        uint256 id_,
-        uint256 collateralAmount_,
-        uint256 ltv_,
-        uint256 shareAmount_
-    ) external view returns (uint256 stableAmount_);
 
     function expectedMintAmountToLtv(
         uint256 id_,
@@ -33,20 +26,14 @@ interface IFoxFarm is ICDP {
         uint256 newShareAmount_
     ) external view returns (uint256 newStableAmount_);
 
-    function expectedRedeemAmountWithLtv(
-        uint256 id_,
-        uint256 stableAmount_,
-        uint256 ltv_
-    ) external view returns (uint256 collateralAmount_, uint256 shareAmount_);
-
     function expectedRedeemAmountToLtv(
         uint256 id_,
-        uint256 paidStableAmount_,
+        uint256 collectedStableAmount_,
         uint256 ltv_
     )
         external
         view
-        returns (uint256 collateralAmountToWithdraw_, uint256 newShareAmount_);
+        returns (uint256 emittedCollateralAmount_, uint256 emittedShareAmount_);
 
     function exchangedShareAmountFromCollateralWithLtv(
         uint256 id_,
