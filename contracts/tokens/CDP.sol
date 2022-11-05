@@ -158,10 +158,14 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
      *@dev multiplied by _DENOMINATOR.
      */
     function currentLTV(uint256 id_) public view virtual returns (uint256 ltv) {
-        CollateralizedDebtPosition memory _cdp = cdps[id_];
-        ltv =
-            ((_cdp.debt + _cdp.fee) * _DENOMINATOR * _DENOMINATOR) /
-            (_cdp.collateral * _collateralPrice);
+        if (id_ >= id) {
+            return 0;
+        } else {
+            CollateralizedDebtPosition memory _cdp = cdps[id_];
+            ltv =
+                ((_cdp.debt + _cdp.fee) * _DENOMINATOR * _DENOMINATOR) /
+                (_cdp.collateral * _collateralPrice);
+        }
     }
 
     function globalLTV() public view virtual returns (uint256 ltv) {
