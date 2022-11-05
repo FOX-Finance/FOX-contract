@@ -82,6 +82,20 @@ interface ICDP {
 
     function globalHealthFactor() external view returns (uint256 health);
 
+    function getCollateralPrice() external view returns (uint256);
+
+    function borrowAmountToLTV(
+        uint256 id_,
+        uint256 ltv_,
+        uint256 collateralAmount_
+    ) external view returns (uint256 debtAmount_);
+
+    function withdrawAmountToLTV(
+        uint256 id_,
+        uint256 ltv_,
+        uint256 debtAmount_
+    ) external view returns (uint256 collateralAmount_);
+
     //============ CDP Operations ============//
 
     function open() external returns (uint256 id_);

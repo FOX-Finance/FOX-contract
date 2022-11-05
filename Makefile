@@ -9,9 +9,7 @@ set:
 
 reset:
 	make clean
-	npm install
-	npx hardhat clean
-	npx hardhat compile
+	make set
 
 clean:
 	rm -rf artifacts

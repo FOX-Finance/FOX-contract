@@ -13,6 +13,8 @@ import "../interfaces/ISIN.sol";
 
 import "../interfaces/ICDP.sol";
 
+import "hardhat/console.sol";
+
 // import "./interfaces/IWETH.sol";
 
 /**
@@ -33,7 +35,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     // treats SIN is always $1.
 
     uint256 internal constant _DENOMINATOR = 10000;
-    uint256 private constant _minimumCollateral = 0.005 ether;
+    uint256 private constant _minimumCollateral = 0.000 ether; // TODO: 0.005
     uint256 public maxLTV; // (maxLTV / _DENOMINATOR)
     uint256 public cap; // total debt cap
 
@@ -158,7 +160,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     function currentLTV(uint256 id_) public view virtual returns (uint256 ltv) {
         CollateralizedDebtPosition memory _cdp = cdps[id_];
         ltv =
-            (_cdp.debt * _DENOMINATOR * _DENOMINATOR) /
+            ((_cdp.debt + _cdp.fee) * _DENOMINATOR * _DENOMINATOR) /
             (_cdp.collateral * _collateralPrice);
     }
 
@@ -179,42 +181,50 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     {
         CollateralizedDebtPosition memory _cdp = cdps[id_];
         health =
-            (_cdp.debt * _DENOMINATOR * _DENOMINATOR * _DENOMINATOR) /
+            ((_cdp.debt + _cdp.fee) *
+                _DENOMINATOR *
+                _DENOMINATOR *
+                _DENOMINATOR) /
             (_cdp.collateral * _collateralPrice * maxLTV);
     }
 
     function globalHealthFactor() public view virtual returns (uint256 health) {
-        health =
-            (totalDebt * _DENOMINATOR * _DENOMINATOR * _DENOMINATOR) /
-            (totalCollateral * _collateralPrice * maxLTV);
+        if (totalCollateral != 0 && _collateralPrice != 0 && maxLTV != 0) {
+            health =
+                (totalDebt * _DENOMINATOR * _DENOMINATOR * _DENOMINATOR) /
+                (totalCollateral * _collateralPrice * maxLTV);
+        }
     }
 
     //============ View Functions ============//
 
-    function borrowAmountToLTV(uint256 id_, uint256 multipliedLtv_)
-        public
-        view
-        virtual
-        returns (uint256 debtAmount_)
-    {
-        CollateralizedDebtPosition memory _cdp = cdps[id_];
-        debtAmount_ =
-            (_cdp.collateral * _collateralPrice * multipliedLtv_) /
-            (_DENOMINATOR * _DENOMINATOR) -
-            _cdp.debt;
+    function getCollateralPrice() external view returns (uint256) {
+        return _collateralPrice;
     }
 
-    function withdrawAmountToLTV(uint256 id_, uint256 multipliedLtv_)
-        public
-        view
-        virtual
-        returns (uint256 collateralAmount_)
-    {
+    function borrowAmountToLTV(
+        uint256 id_,
+        uint256 ltv_,
+        uint256 collateralAmount_
+    ) public view virtual returns (uint256 debtAmount_) {
+        CollateralizedDebtPosition memory _cdp = cdps[id_];
+        debtAmount_ =
+            ((_cdp.collateral + collateralAmount_) * _collateralPrice * ltv_) /
+            (_DENOMINATOR * _DENOMINATOR) -
+            (_cdp.debt + _cdp.fee);
+    }
+
+    function withdrawAmountToLTV(
+        uint256 id_,
+        uint256 ltv_,
+        uint256 debtAmount_
+    ) public view virtual returns (uint256 collateralAmount_) {
         CollateralizedDebtPosition memory _cdp = cdps[id_];
         collateralAmount_ =
-            _cdp.collateral -
-            (_cdp.debt * _DENOMINATOR * _DENOMINATOR) /
-            (multipliedLtv_ * _collateralPrice);
+            (_cdp.collateral * _collateralPrice) /
+            _DENOMINATOR -
+            ((_cdp.debt - debtAmount_ + _cdp.fee) * _DENOMINATOR) /
+            ltv_;
     }
 
     //============ CDP Operations ============//
@@ -378,7 +388,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     function _close(address account_, uint256 id_) internal virtual {
         CollateralizedDebtPosition storage _cdp = cdps[id_];
 
-        if (_cdp.debt != 0) {
+        if (_cdp.debt != 0 || _cdp.fee != 0) {
             _repay(account_, id_, _cdp.debt + _cdp.fee);
         }
         if (_cdp.collateral != 0) {
@@ -419,9 +429,25 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     ) internal {
         CollateralizedDebtPosition storage _cdp = cdps[id_];
 
+        console.log(
+            "_withdraw: %s %s %s",
+            _cdp.collateral,
+            _cdp.debt,
+            _cdp.fee
+        );
+        console.log("_withdraw: %s", amount_);
+
         _cdp.collateral -= amount_;
         totalCollateral -= amount_;
         _collateralToken.safeTransfer(account_, amount_);
+
+        console.log(
+            "_withdraw: %s %s %s",
+            _cdp.collateral,
+            _cdp.debt,
+            _cdp.fee
+        );
+        console.log("_withdraw: %s", healthFactor(id_));
 
         require(isSafe(id_), "CDP::_withdraw: CDP operation exceeds max LTV.");
         require(
@@ -452,6 +478,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         emit Borrow(account_, id_, amount_);
     }
 
+    // TODO: fromAccount_, toAccount_
     function _repay(
         address account_,
         uint256 id_,
@@ -465,9 +492,17 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         if (_cdp.fee >= amount_) {
             _cdp.fee -= amount_;
             totalFee -= amount_;
-            _debtToken.safeTransferFrom(account_, feeTo, amount_);
+            if (account_ == address(this)) {
+                _debtToken.safeTransfer(feeTo, amount_);
+            } else {
+                _debtToken.safeTransferFrom(account_, feeTo, amount_);
+            }
         } else if (_cdp.fee != 0) {
-            _debtToken.safeTransferFrom(account_, feeTo, _cdp.fee);
+            if (account_ == address(this)) {
+                _debtToken.safeTransfer(feeTo, _cdp.fee);
+            } else {
+                _debtToken.safeTransferFrom(account_, feeTo, _cdp.fee);
+            }
             _cdp.debt -= (amount_ - _cdp.fee);
             totalDebt -= (amount_ - _cdp.fee);
             ISIN(address(_debtToken)).burnFrom(account_, amount_ - _cdp.fee);

@@ -46,6 +46,7 @@ contract FOXS is IFOXS, ERC20Capped, Ownable {
 
     //============ ERC20-related Functions ============//
 
+    // TODO: deprecate
     function mint(address account, uint256 amount) external onlyOwner {
         _mint(account, amount);
     }

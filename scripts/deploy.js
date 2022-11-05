@@ -62,7 +62,6 @@ async function deploy() {
         "Owner": signer.owner.address,
         "Bot": signer.bot.address,
         "FeeTo": signer.feeTo.address,
-        "User": signer.user.address,
         "OracleFeeder": contract.oracleFeeder.address,
         "WETH": contract.weth.address,
         "NIS": contract.nis.address,

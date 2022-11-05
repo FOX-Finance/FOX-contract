@@ -1,5 +1,3 @@
-const address = require("../address");
-
 let signer = {
     "owner": null,
     "bot": null,
@@ -19,7 +17,7 @@ let contract = {
 };
 
 async function set() {
-    [signer.owner, signer.bot, signer.feeTo, signer.user] = await ethers.getSigners(); // main/test-net
+    [signer.owner, signer.bot, signer.feeTo, signer.user] = await ethers.getSigners();
 
     let balanceOfOwner = await signer.owner.getBalance() / (10 ** 18);
     let balanceOfBot = await signer.bot.getBalance() / (10 ** 18);
@@ -33,6 +31,8 @@ async function set() {
 }
 
 async function attach() {
+    const address = require("../address");
+
     process.stdout.write("Attach WETH");
     contract.weth = await ethers.getContractAt("WETH", address.WETH);
     console.log(" - complete");
@@ -43,6 +43,10 @@ async function attach() {
 
     process.stdout.write("Attach FOX");
     contract.fox = await ethers.getContractAt("FOX", address.FOX);
+    console.log(" - complete");
+
+    process.stdout.write("Attach FoxFarm");
+    contract.foxFarm = await ethers.getContractAt("FoxFarm", address.FoxFarm);
     console.log(" - complete");
 
     process.stdout.write("Attach OracleFeeder");

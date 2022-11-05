@@ -381,14 +381,19 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
 
         // receive
         if (_feeTo != address(0)) {
-            _debtToken.safeTransfer(
-                toAccount_,
-                debtAmount_ - (debtAmount_ * _burnFeeRatio) / _DENOMINATOR // _feeTo
+            uint256 _feeDebtAmount = (debtAmount_ * _burnFeeRatio) /
+                _DENOMINATOR;
+            uint256 _feeShareAmount = (shareAmount_ * _burnFeeRatio) /
+                _DENOMINATOR;
+            (debtAmount_, shareAmount_) = (
+                debtAmount_ - _feeDebtAmount,
+                shareAmount_ - _feeShareAmount
             );
-            _shareToken.safeTransfer(
-                toAccount_,
-                shareAmount_ - (shareAmount_ * _burnFeeRatio) / _DENOMINATOR // _feeTo
-            );
+
+            _debtToken.safeTransfer(_feeTo, _feeDebtAmount);
+            _debtToken.safeTransfer(toAccount_, debtAmount_);
+            _shareToken.safeTransfer(_feeTo, _feeShareAmount);
+            _shareToken.safeTransfer(toAccount_, shareAmount_);
         } else {
             _debtToken.safeTransfer(toAccount_, debtAmount_);
             _shareToken.safeTransfer(toAccount_, shareAmount_);

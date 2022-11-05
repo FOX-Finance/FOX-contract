@@ -4,7 +4,9 @@ async function wrap() {
     let txRes;
 
     process.stdout.write("[WETH] Deposit");
-    txRes = await contract.weth.connect(signer.user).deposit({ value: BigInt(0.01 * (10 ** 18)) });
+    txRes = await contract.weth.connect(signer.user).deposit({
+        value: BigInt(0.01 * (10 ** 18))
+    });
     await txRes.wait();
     console.log(" - complete");
 }

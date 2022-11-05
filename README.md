@@ -257,8 +257,12 @@ $ await ethers.provider.getBlock();
 $ await network.provider.send("evm_setAutomine", [false]);
 $ await network.provider.send("evm_setIntervalMining", [1000]);
 
-# Increase Time
+# Increase Time & Block
 $ await network.provider.send("evm_increaseTime", [10000]);
+$ await ethers.provider.send("hardhat_mine", [ethers.utils.hexValue(10)]);
+
+# Balance
+$ await ethers.provider.getBalance("0xa29A12B879bCC89faE72687e09Da3c3995B91fe5")
 ```
 
 ### Test
@@ -276,12 +280,34 @@ $ npx hardhat run scripts/deploy.js --network localhost
 ```
 
 <!--
+```bash
+$ dotenv -e .env.test -- npx hardhat node --network hardhat
+$ dotenv -e .env.test -- npx hardhat console --network localhost
+$ dotenv -e .env.test -- npx hardhat run scripts/deploy.js --network localhost
+```
+
+0. set.js
+1. deploy.js
+2. fuel.js
+3. mint.js
+4. redeem.js
+
+```bash
+$ dotenv -e .env.test -- npx hardhat run scripts/deploy.js --network localhost
+$ dotenv -e .env.test -- npx hardhat run scripts/fuel.js --network localhost
+$ dotenv -e .env.test -- npx hardhat run scripts/mint.js --network localhost
+```
+-->
+
+<!--
 # Proof-of-Work
 - [x] Moralis for oracle
 - [x] Check additional conditions: total ratio, cdp ratio
 - [x] Oracle feeder
-- [ ] WARNING or Restriction when protocol trust touches 100% collateral backing level
+- [x] WARNING or Restriction when protocol trust touches 100% collateral backing level
 - [ ] Multiple collateral: LP as collateral (kind of liquid staking)
+       - DAODAO
+       - Shared Stablecoin
 - [ ] BNB liquid staking -> ankr's aBNBc as collateral:
        - https://www.ankr.com/docs/staking/for-integrators/smart-contract-api/bnb-api/#stake-bnb-and-claim-abnbc
        - https://www.ankr.com/docs/staking/for-integrators/smart-contract-api/bnb-api/#unstake-abnbc-and-get-bnb
