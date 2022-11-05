@@ -88,14 +88,15 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
                     (_DENOMINATOR * _DENOMINATOR)
             );
         } else {
-            CollateralizedDebtPosition memory _cdp = cdps[id_];
-            shareAmount_ = _stableToken.requiredShareAmountFromDebt(
-                ((_cdp.collateral + collateralAmount_) *
-                    _collateralPrice *
-                    ltv_) /
-                    (_DENOMINATOR * _DENOMINATOR) +
-                    (_cdp.debt + _cdp.fee)
-            );
+            // TODO: toLtv
+            // CollateralizedDebtPosition memory _cdp = cdps[id_];
+            // shareAmount_ = _stableToken.requiredShareAmountFromDebt(
+            //     ((_cdp.collateral + collateralAmount_) *
+            //         _collateralPrice *
+            //         ltv_) /
+            //         (_DENOMINATOR * _DENOMINATOR) +
+            //         (_cdp.debt + _cdp.fee)
+            // );
         }
     }
 
@@ -111,15 +112,16 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
                     _DENOMINATOR) /
                 (ltv_ * _collateralPrice);
         } else {
-            CollateralizedDebtPosition memory _cdp = cdps[id_];
-            collateralAmount_ =
-                (_stableToken.requiredDebtAmountFromShare(shareAmount_) *
-                    _DENOMINATOR *
-                    _DENOMINATOR +
-                    _cdp.debt +
-                    _cdp.fee) /
-                (ltv_ * _collateralPrice) +
-                _cdp.collateral;
+            // TODO: toLtv
+            // CollateralizedDebtPosition memory _cdp = cdps[id_];
+            // collateralAmount_ =
+            //     (_stableToken.requiredDebtAmountFromShare(shareAmount_) *
+            //         _DENOMINATOR *
+            //         _DENOMINATOR +
+            //         _cdp.debt +
+            //         _cdp.fee) /
+            //     (ltv_ * _collateralPrice) +
+            //     _cdp.collateral;
         }
     }
 

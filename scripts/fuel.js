@@ -1,23 +1,24 @@
 const { signer, contract, set, attach } = require('./set');
 
-async function wrap() {
+async function mintWETH() {
     let txRes;
 
-    process.stdout.write("[WETH] Deposit");
-    txRes = await contract.weth.connect(signer.user).deposit({
-        value: BigInt(0.01 * (10 ** 18))
-    });
+    process.stdout.write("[WETH] Mint");
+    txRes = await contract.weth.connect(signer.owner).mint(
+        signer.user.address,
+        BigInt(122.7 * (10 ** 18))
+    );
     await txRes.wait();
     console.log(" - complete");
 }
 
-async function mint() {
+async function mintFOXS() {
     let txRes;
 
     process.stdout.write("[FOXS] Mint");
     txRes = await contract.foxs.connect(signer.owner).mint(
         signer.user.address,
-        BigInt(1 * (10 ** 18))
+        BigInt(327.0 * (10 ** 18))
     );
     await txRes.wait();
     console.log(" - complete");
@@ -30,11 +31,11 @@ async function main() {
     console.log("\n<Attach>");
     await attach();
 
-    console.log("\n<Wrap>");
-    await wrap();
+    console.log("\n<Mint WETH>");
+    await mintWETH();
 
-    console.log("\n<Mint>");
-    await mint();
+    console.log("\n<Mint FOXS>");
+    await mintFOXS();
 }
 
 // run

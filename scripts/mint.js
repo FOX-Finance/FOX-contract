@@ -124,7 +124,7 @@ async function main() {
     await balances();
 
     // Case 1: Input WETH & LTV
-    const collateralAmount = BigInt(0.01 * (10 ** 18));
+    const collateralAmount = BigInt(10.00 * (10 ** 18));
     const ltv = BigInt(40 * 100);
     console.log("\n<Get required FOXS amount>");
     const shareAmount = await getRequiredFoxsAmount(collateralAmount, ltv);

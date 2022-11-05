@@ -15,6 +15,11 @@ contract WETH is IWETH, ERC20("Wrapped ETH", "WETH") {
         revert();
     }
 
+    // TODO: test only
+    function mint(address account_, uint256 amount_) public payable {
+        _mint(account_, amount_);
+    }
+
     /**
      * @notice Exchange ETH to WETH.
      */

@@ -45,7 +45,8 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
     uint256 public step;
 
     uint256 private constant _TIME_PERIOD = 1 hours;
-    uint256 public trustLevel = 200; // 0 ~ 10000 (0% ~ 100%) // TODO: initial trust level
+    // uint256 public trustLevel = 200; // 0 ~ 10000 (0% ~ 100%) // TODO: initial trust level
+    uint256 public trustLevel = 3500; // TODO: test purpose
 
     address private _feeTo;
     uint256 private _mintFeeRatio; // (feeRatio / _DENOMINATOR)
@@ -261,7 +262,9 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         view
         returns (uint256 debtAmount_)
     {
-        debtAmount_ = (shareAmount_ * _sharePrice) / trustLevel;
+        debtAmount_ =
+            ((_DENOMINATOR - trustLevel) * shareAmount_ * _sharePrice) /
+            (trustLevel * _DENOMINATOR);
     }
 
     function requiredDebtAmountFromStable(uint256 stableAmount_)
