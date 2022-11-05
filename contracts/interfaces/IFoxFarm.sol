@@ -17,6 +17,11 @@ interface IFoxFarm is ICDP {
         view
         returns (uint256 upperBound_, uint256 lowerBound_);
 
+    function ltvRangeWhenBuyback(uint256 id_, uint256 shareAmount_)
+        external
+        view
+        returns (uint256 upperBound_, uint256 lowerBound_);
+
     function requiredShareAmountFromCollateralToLtv(
         uint256 id_,
         uint256 newCollateralAmount_,
@@ -51,7 +56,7 @@ interface IFoxFarm is ICDP {
         uint256 ltv_
     ) external view returns (uint256 shareAmount_);
 
-    function exchangedCollateralAmountFromShareWithLtv(
+    function exchangedCollateralAmountFromShareToLtv(
         uint256 id_,
         uint256 shareAmount_,
         uint256 ltv_

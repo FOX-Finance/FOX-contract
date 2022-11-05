@@ -46,7 +46,7 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
 
     uint256 private constant _TIME_PERIOD = 1 hours;
     // uint256 public trustLevel = 200; // 0 ~ 10000 (0% ~ 100%) // TODO: initial trust level
-    uint256 public trustLevel = 3500; // TODO: test purpose
+    uint256 public trustLevel = 2000; // TODO: test purpose
 
     address private _feeTo;
     uint256 public mintFeeRatio; // (feeRatio / _DENOMINATOR)
@@ -380,7 +380,7 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
             _debtToken.balanceOf(address(this));
     }
 
-    // TODO: fee
+    /// @notice Indicates allowable buyback amount
     function surplusBuybackAmount() public view returns (uint256 debtAmount_) {
         return
             _debtToken.balanceOf(address(this)) -
@@ -388,7 +388,6 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
             _DENOMINATOR;
     }
 
-    // TODO: fee
     function exchangedShareAmountFromDebt(uint256 debtAmount_)
         public
         view
@@ -397,7 +396,6 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         shareAmount_ = (debtAmount_ * _DENOMINATOR) / (_sharePrice);
     }
 
-    // TODO: fee
     function exchangedDebtAmountFromShare(uint256 shareAmount_)
         public
         view
@@ -492,9 +490,9 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         whenNotPaused
         returns (uint256 debtAmount_)
     {
-        uint256 _surplusAmount = surplusBuybackAmount(); // also checks recollateralizing condition
+        // also checks recollateralizing condition
         uint256 _exchangedSurplusShareAmount = exchangedShareAmountFromDebt(
-            _surplusAmount
+            surplusBuybackAmount()
         );
         _exchangedSurplusShareAmount = _exchangedSurplusShareAmount >=
             shareAmount_

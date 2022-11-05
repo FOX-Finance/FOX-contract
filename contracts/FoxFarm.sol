@@ -138,6 +138,30 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
             : _defaultLowerBound;
     }
 
+    // TODO: fix
+    function ltvRangeWhenBuyback(uint256 id_, uint256 shareAmount_)
+        public
+        view
+        returns (uint256 upperBound_, uint256 lowerBound_)
+    {
+        CollateralizedDebtPosition memory _cdp = cdps[id_];
+
+        upperBound_ = currentLTV(id_);
+
+        lowerBound_ =
+            ((_cdp.debt + _cdp.fee) * _DENOMINATOR * _DENOMINATOR) /
+            (_cdp.collateral * _collateralPrice);
+
+        uint256 _defaultLowerBound = (_minimumCollateral * _DENOMINATOR) /
+            _cdp.collateral;
+        lowerBound_ = lowerBound_ > _defaultLowerBound
+            ? lowerBound_
+            : _defaultLowerBound;
+    }
+
+    // TODO
+    // function ltvRangeWhenRecoll(){};
+
     function requiredShareAmountFromCollateralToLtv(
         uint256 id_,
         uint256 newCollateralAmount_,
@@ -248,29 +272,16 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         }
     }
 
-    // TODO: toLtv
-    function exchangedCollateralAmountFromShareWithLtv(
+    function exchangedCollateralAmountFromShareToLtv(
         uint256 id_,
         uint256 shareAmount_,
         uint256 ltv_
     ) public view returns (uint256 collateralAmount_) {
-        if (id_ >= id) {
-            collateralAmount_ =
-                (_stableToken.exchangedDebtAmountFromShare(shareAmount_) *
-                    _DENOMINATOR *
-                    _DENOMINATOR) /
-                (ltv_ * _collateralPrice);
-        } else {
-            CollateralizedDebtPosition memory _cdp = cdps[id_];
-            collateralAmount_ =
-                (_stableToken.exchangedDebtAmountFromShare(shareAmount_) *
-                    _DENOMINATOR *
-                    _DENOMINATOR +
-                    _cdp.debt +
-                    _cdp.fee) /
-                (ltv_ * _collateralPrice) +
-                _cdp.collateral;
-        }
+        collateralAmount_ = withdrawCollateralAmountToLTV(
+            id_,
+            ltv_,
+            _stableToken.exchangedDebtAmountFromShare(shareAmount_)
+        );
     }
 
     //============ CDP Internal Operations (override) ============//
@@ -388,19 +399,21 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
     function buybackRepayDebt(
         address account_,
         uint256 id_,
-        uint256 amount_
+        uint256 shareAmount_
     ) external whenNotPaused onlyGloballyHealthy returns (uint256 debtAmount_) {
-        _shareToken.safeTransferFrom(_msgSender(), address(this), amount_);
-        debtAmount_ = _stableToken.buyback(account_, amount_);
+        address msgSender = _msgSender();
+
+        _shareToken.safeTransferFrom(msgSender, address(this), shareAmount_);
+        debtAmount_ = _stableToken.buyback(account_, shareAmount_);
 
         _update(id_);
-        _repay(_msgSender(), id_, debtAmount_);
+        _repay(msgSender, id_, debtAmount_);
     }
 
     function buybackWithdrawCollateral(
         address account_,
         uint256 id_,
-        uint256 amount_
+        uint256 shareAmount_
     )
         external
         whenNotPaused
@@ -410,15 +423,43 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
     {
         address msgSender = _msgSender();
 
-        _shareToken.safeTransferFrom(msgSender, address(this), amount_);
-        debtAmount_ = _stableToken.buyback(account_, amount_);
+        _shareToken.safeTransferFrom(msgSender, address(this), shareAmount_);
+        debtAmount_ = _stableToken.buyback(account_, shareAmount_);
 
         uint256 _currentLTV = currentLTV(id_);
 
         _update(id_);
         _repay(msgSender, id_, debtAmount_);
 
-        uint256 withdrawAmount_ = withdrawAmountToLTV(id_, _currentLTV, 0);
+        uint256 withdrawAmount_ = withdrawCollateralAmountToLTV(
+            id_,
+            _currentLTV,
+            0
+        );
+        _withdraw(msgSender, id_, withdrawAmount_);
+    }
+
+    function buybackToLtv(
+        address account_,
+        uint256 id_,
+        uint256 shareAmount_,
+        uint256 ltv_
+    )
+        external
+        whenNotPaused
+        onlyCdpApprovedOrOwner(_msgSender(), id_)
+        onlyGloballyHealthy
+        returns (uint256 debtAmount_)
+    {
+        address msgSender = _msgSender();
+
+        _shareToken.safeTransferFrom(msgSender, address(this), shareAmount_);
+        debtAmount_ = _stableToken.buyback(account_, shareAmount_);
+
+        _update(id_);
+        _repay(msgSender, id_, debtAmount_);
+
+        uint256 withdrawAmount_ = withdrawCollateralAmountToLTV(id_, ltv_, 0);
         _withdraw(msgSender, id_, withdrawAmount_);
     }
 

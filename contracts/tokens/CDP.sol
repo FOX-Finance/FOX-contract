@@ -13,8 +13,6 @@ import "../interfaces/ISIN.sol";
 
 import "../interfaces/ICDP.sol";
 
-import "hardhat/console.sol";
-
 // import "./interfaces/IWETH.sol";
 
 /**
@@ -234,18 +232,18 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
             (_cdp.debt + _cdp.fee);
     }
 
-    // TODO: fee?
-    function withdrawAmountToLTV(
+    function withdrawCollateralAmountToLTV(
         uint256 id_,
         uint256 ltv_,
         uint256 debtAmount_
     ) public view virtual returns (uint256 collateralAmount_) {
         CollateralizedDebtPosition memory _cdp = cdps[id_];
         collateralAmount_ =
-            (_cdp.collateral * _collateralPrice) /
-            _DENOMINATOR -
-            ((_cdp.debt - debtAmount_ + _cdp.fee) * _DENOMINATOR) /
-            ltv_;
+            _cdp.collateral -
+            ((_cdp.debt - debtAmount_ + _cdp.fee) *
+                _DENOMINATOR *
+                _DENOMINATOR) /
+            (ltv_ * _collateralPrice);
     }
 
     //============ CDP Operations ============//
@@ -450,25 +448,9 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     ) internal {
         CollateralizedDebtPosition storage _cdp = cdps[id_];
 
-        console.log(
-            "_withdraw: %s %s %s",
-            _cdp.collateral,
-            _cdp.debt,
-            _cdp.fee
-        );
-        console.log("_withdraw: %s", amount_);
-
         _cdp.collateral -= amount_;
         totalCollateral -= amount_;
         _collateralToken.safeTransfer(account_, amount_);
-
-        console.log(
-            "_withdraw: %s %s %s",
-            _cdp.collateral,
-            _cdp.debt,
-            _cdp.fee
-        );
-        console.log("_withdraw: %s", healthFactor(id_));
 
         require(isSafe(id_), "CDP::_withdraw: CDP operation exceeds max LTV.");
         require(

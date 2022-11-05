@@ -99,7 +99,7 @@ interface ICDP {
         uint256 collateralAmount_
     ) external view returns (uint256 debtAmount_);
 
-    function withdrawAmountToLTV(
+    function withdrawCollateralAmountToLTV(
         uint256 id_,
         uint256 ltv_,
         uint256 debtAmount_
