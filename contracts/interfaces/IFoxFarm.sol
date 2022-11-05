@@ -7,6 +7,16 @@ import "./ICDP.sol";
 interface IFoxFarm is ICDP {
     //============ View Functions ============//
 
+    function ltvRangeWhenMint(uint256 id_, uint256 collateralAmount_)
+        external
+        view
+        returns (uint256 upperBound_, uint256 lowerBound_);
+
+    function ltvRangeWhenRedeem(uint256 id_, uint256 collectedStableAmount_)
+        external
+        view
+        returns (uint256 upperBound_, uint256 lowerBound_);
+
     function requiredShareAmountFromCollateralToLtv(
         uint256 id_,
         uint256 newCollateralAmount_,

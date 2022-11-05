@@ -56,6 +56,14 @@ async function balances() {
     console.log(" - complete:\t\t", balance / (10 ** 18));
 }
 
+async function getLtvRange(id, collateralAmount) {
+    process.stdout.write("[FoxFarm] Get LTV range");
+    const res = await contract.foxFarm.ltvRangeWhenMint(id, collateralAmount);
+    console.log(" - complete:");
+    console.log("\tupperBound:\t", res.upperBound_ / 100, "%");
+    console.log("\tlowerBound:\t", res.lowerBound_ / 100, "%");
+}
+
 async function getRequiredFoxsAmount(collateralAmount, ltv) {
     process.stdout.write("[FoxFarm] Get required FOXS");
     const shareAmount = await contract.foxFarm.requiredShareAmountFromCollateralToLtv(
@@ -123,9 +131,16 @@ async function main() {
     console.log("\n<Before: Balances>");
     await balances();
 
-    // Case 1: Input WETH & LTV
     const collateralAmount = BigInt(10.00 * (10 ** 18));
     const ltv = BigInt(40 * 100);
+
+    console.log("\n<Get LTV range>");
+    await getLtvRange(
+        BigInt(0),
+        collateralAmount
+    );
+
+    // Case 1: Input WETH & LTV
     console.log("\n<Get required FOXS amount>");
     const shareAmount = await getRequiredFoxsAmount(collateralAmount, ltv);
 

@@ -53,6 +53,14 @@ async function getLtv(id) {
     return ltv;
 }
 
+async function getLtvRange(id, stableAmount) {
+    process.stdout.write("[FoxFarm] Get LTV range");
+    const res = await contract.foxFarm.ltvRangeWhenRedeem(id, stableAmount);
+    console.log(" - complete:");
+    console.log("\tupperBound:\t", res.upperBound_ / 100, "%");
+    console.log("\tlowerBound:\t", res.lowerBound_ / 100, "%");
+}
+
 async function getExpectedRedeemAmount(id, stableAmount, ltv) {
     process.stdout.write("[FoxFarm] Get expected redeem amount");
     const res = await contract.foxFarm.expectedRedeemAmountToLtv(
@@ -65,18 +73,6 @@ async function getExpectedRedeemAmount(id, stableAmount, ltv) {
     console.log("\tshareAmount:\t\t", res.emittedShareAmount_ / (10 ** 18));
 
     return { 'collateralAmount': res.emittedCollateralAmount_, 'shareAmount': res.emittedShareAmount_ };
-}
-
-async function getWithdrawAmountToLTV(id, ltv, debtAmount) {
-    process.stdout.write("[FoxFarm] Get withdraw amount");
-    const collateralAmount = await contract.foxFarm.withdrawAmountToLTV(
-        id,
-        ltv,
-        debtAmount
-    );
-    console.log(" - complete:\t", collateralAmount / (10 ** 18));
-
-    return collateralAmount;
 }
 
 async function redeemFOX(id, repayAmount, withdrawAmount) {
@@ -111,26 +107,25 @@ async function main() {
     console.log("\n<Get current CDP info>");
     await getCdp(BigInt(0));
 
+    console.log("\n<Get LTV range>");
+    await getLtvRange(
+        BigInt(0),
+        BigInt(4 * (10 ** 18)),
+    );
+
     console.log("\n<Expected redeem amount>");
     const res = await getExpectedRedeemAmount(
         BigInt(0),
         BigInt(4 * (10 ** 18)),
-        BigInt(40 * 100)
+        BigInt(14.2 * 100)
     );
     const redeemCollateralAmount = res.collateralAmount;
-
-    // console.log("\n<Get withdraw amount>");
-    // const withdrawAmount = await getWithdrawAmountToLTV(
-    //     BigInt(0),
-    //     BigInt(30 * 100),
-    //     BigInt(0)
-    // );
 
     console.log("\n<Redeem FOX>");
     await redeemFOX(
         BigInt(0), // id
         BigInt(4 * (10 ** 18)), // repayAmount
-        BigInt(redeemCollateralAmount) // TODO: apply fee
+        BigInt(redeemCollateralAmount) // withdrawAmount
     );
 
     console.log("\n<After: Balances>");

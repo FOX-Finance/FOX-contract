@@ -49,10 +49,10 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
     uint256 public trustLevel = 3500; // TODO: test purpose
 
     address private _feeTo;
-    uint256 private _mintFeeRatio; // (feeRatio / _DENOMINATOR)
-    uint256 private _burnFeeRatio; // (feeRatio / _DENOMINATOR)
+    uint256 public mintFeeRatio; // (feeRatio / _DENOMINATOR)
+    uint256 public burnFeeRatio; // (feeRatio / _DENOMINATOR)
 
-    uint256 private _bonusRatio; // recollateralization bonus
+    uint256 public bonusRatio; // recollateralization bonus
 
     //============ Initialize ============//
 
@@ -77,10 +77,10 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
 
         step = _ULTRA_STEP; // TODO: automatically adjusting
 
-        _mintFeeRatio = mintFeeRatio_;
-        _burnFeeRatio = burnFeeRatio_;
+        mintFeeRatio = mintFeeRatio_;
+        burnFeeRatio = burnFeeRatio_;
 
-        _bonusRatio = bonusRatio_;
+        bonusRatio = bonusRatio_;
     }
 
     function initialize(address foxFarm_) external onlyOwner {
@@ -98,21 +98,21 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
     }
 
     function setMintFeeRatio(uint256 newMintFeeRatio) external onlyOwner {
-        uint256 prevMintFeeRatio = _mintFeeRatio;
-        _mintFeeRatio = newMintFeeRatio;
-        emit SetMintFeeRatio(prevMintFeeRatio, _mintFeeRatio);
+        uint256 prevMintFeeRatio = mintFeeRatio;
+        mintFeeRatio = newMintFeeRatio;
+        emit SetMintFeeRatio(prevMintFeeRatio, mintFeeRatio);
     }
 
     function setBurnFeeRatio(uint256 newBunrFeeRatio) external onlyOwner {
-        uint256 prevBunrFeeRatio = _burnFeeRatio;
-        _burnFeeRatio = newBunrFeeRatio;
-        emit SetBurnFeeRatio(prevBunrFeeRatio, _burnFeeRatio);
+        uint256 prevBunrFeeRatio = burnFeeRatio;
+        burnFeeRatio = newBunrFeeRatio;
+        emit SetBurnFeeRatio(prevBunrFeeRatio, burnFeeRatio);
     }
 
     function setBonusRatio(uint256 newBonusRatio) external onlyOwner {
-        uint256 prevBonusRatio = _bonusRatio;
-        _bonusRatio = newBonusRatio;
-        emit SetBonusRatio(prevBonusRatio, _bonusRatio);
+        uint256 prevBonusRatio = bonusRatio;
+        bonusRatio = newBonusRatio;
+        emit SetBonusRatio(prevBonusRatio, bonusRatio);
     }
 
     //============ Pausable ============//
@@ -247,7 +247,7 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
     {
         stableAmount_ =
             (debtAmount_ * _DENOMINATOR * _DENOMINATOR) /
-            ((_DENOMINATOR - trustLevel) * (_DENOMINATOR - _burnFeeRatio));
+            ((_DENOMINATOR - trustLevel) * (_DENOMINATOR - burnFeeRatio));
     }
 
     function requiredShareAmountFromDebt(uint256 debtAmount_)
@@ -276,7 +276,7 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
     {
         shareAmount_ =
             (stableAmount_ * _DENOMINATOR * trustLevel) /
-            ((_DENOMINATOR - _mintFeeRatio) * _sharePrice);
+            ((_DENOMINATOR - mintFeeRatio) * _sharePrice);
     }
 
     function requiredDebtAmountFromShare(uint256 shareAmount_)
@@ -307,7 +307,7 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
     {
         debtAmount_ =
             (stableAmount_ * (_DENOMINATOR - trustLevel)) /
-            (_DENOMINATOR - _mintFeeRatio);
+            (_DENOMINATOR - mintFeeRatio);
     }
 
     function expectedMintAmount(uint256 debtAmount_, uint256 shareAmount_)
@@ -340,7 +340,7 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         uint256 shareAmount_
     ) public view returns (uint256 stableAmount_, uint256 mintFee_) {
         stableAmount_ = expectedMintAmount(debtAmount_, shareAmount_);
-        mintFee_ = (stableAmount_ * _mintFeeRatio) / _DENOMINATOR;
+        mintFee_ = (stableAmount_ * mintFeeRatio) / _DENOMINATOR;
         stableAmount_ -= mintFee_;
     }
 
@@ -362,7 +362,7 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
             uint256 burnFee_
         )
     {
-        burnFee_ = (stableAmount_ * _burnFeeRatio) / _DENOMINATOR;
+        burnFee_ = (stableAmount_ * burnFeeRatio) / _DENOMINATOR;
         (debtAmount_, shareAmount_) = expectedRedeemAmount(
             stableAmount_ - burnFee_
         );
@@ -480,7 +480,7 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
 
         // calculate
         shareAmount_ = exchangedShareAmountFromDebt(_shortfallAmount);
-        bonusAmount_ = (shareAmount_ * _bonusRatio) / _DENOMINATOR;
+        bonusAmount_ = (shareAmount_ * bonusRatio) / _DENOMINATOR;
 
         // receive
         _shareToken.safeTransfer(toAccount_, shareAmount_);

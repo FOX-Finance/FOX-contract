@@ -89,6 +89,55 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
             (_cdp.debt + _cdp.fee);
     }
 
+    function ltvRangeWhenMint(uint256 id_, uint256 collateralAmount_)
+        public
+        view
+        returns (uint256 upperBound_, uint256 lowerBound_)
+    {
+        upperBound_ = maxLTV;
+
+        if (id_ >= id) {
+            lowerBound_ =
+                (_minimumCollateral * _DENOMINATOR) /
+                collateralAmount_;
+        } else {
+            CollateralizedDebtPosition memory _cdp = cdps[id_];
+            uint256 _maxDebt = _minimumCollateral < _cdp.debt
+                ? _cdp.debt
+                : _minimumCollateral;
+            lowerBound_ =
+                (_maxDebt * _DENOMINATOR) /
+                (_cdp.collateral + collateralAmount_);
+        }
+    }
+
+    function ltvRangeWhenRedeem(uint256 id_, uint256 collectedStableAmount_)
+        public
+        view
+        returns (uint256 upperBound_, uint256 lowerBound_)
+    {
+        CollateralizedDebtPosition memory _cdp = cdps[id_];
+
+        upperBound_ = maxLTV;
+
+        uint256 _debtAmount = ((collectedStableAmount_ -
+            (collectedStableAmount_ * _stableToken.burnFeeRatio()) /
+            _DENOMINATOR) * (_DENOMINATOR - _stableToken.trustLevel())) /
+            (_DENOMINATOR);
+
+        require(id_ < id, "FoxFarm::ltvRangeWhenRedeem: invalid `id_`.");
+
+        lowerBound_ =
+            ((_cdp.debt - _debtAmount) * _DENOMINATOR * _DENOMINATOR) /
+            (_cdp.collateral * _collateralPrice);
+
+        uint256 _defaultLowerBound = (_minimumCollateral * _DENOMINATOR) /
+            _cdp.collateral;
+        lowerBound_ = lowerBound_ > _defaultLowerBound
+            ? lowerBound_
+            : _defaultLowerBound;
+    }
+
     function requiredShareAmountFromCollateralToLtv(
         uint256 id_,
         uint256 newCollateralAmount_,

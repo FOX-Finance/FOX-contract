@@ -35,7 +35,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     // treats SIN is always $1.
 
     uint256 internal constant _DENOMINATOR = 10000;
-    uint256 private constant _minimumCollateral = 0.000 ether; // TODO: 0.005
+    uint256 internal constant _minimumCollateral = 0.005 ether;
     uint256 public maxLTV; // (maxLTV / _DENOMINATOR)
     uint256 public cap; // total debt cap
 
@@ -221,6 +221,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         return _collateralPrice;
     }
 
+    // TODO: fee?
     function borrowAmountToLTV(
         uint256 id_,
         uint256 ltv_,
@@ -233,6 +234,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
             (_cdp.debt + _cdp.fee);
     }
 
+    // TODO: fee?
     function withdrawAmountToLTV(
         uint256 id_,
         uint256 ltv_,

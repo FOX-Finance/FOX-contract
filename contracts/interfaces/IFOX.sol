@@ -12,6 +12,12 @@ interface IFOX {
         ultra
     }
 
+    function mintFeeRatio() external view returns (uint256);
+
+    function burnFeeRatio() external view returns (uint256);
+
+    function bonusRatio() external view returns (uint256);
+
     //============ Events ============//
 
     event SetFeeTo(address prevFeeTo, address currFeeTo);
