@@ -27,7 +27,8 @@ module.exports = {
           process.env.PRIVATE_KEY_OWNER,
           process.env.PRIVATE_KEY_BOT,
           process.env.PRIVATE_KEY_FEE_TO,
-          process.env.PRIVATE_KEY_USER
+          process.env.PRIVATE_KEY_USER,
+          process.env.PRIVATE_KEY_USER_2
         ],
       },
     },
@@ -37,7 +38,8 @@ module.exports = {
         process.env.PRIVATE_KEY_OWNER,
         process.env.PRIVATE_KEY_BOT,
         process.env.PRIVATE_KEY_FEE_TO,
-        process.env.PRIVATE_KEY_USER
+        process.env.PRIVATE_KEY_USER,
+        process.env.PRIVATE_KEY_USER_2
       ],
     },
     bscTestnet: {
@@ -46,7 +48,8 @@ module.exports = {
         process.env.PRIVATE_KEY_OWNER,
         process.env.PRIVATE_KEY_BOT,
         process.env.PRIVATE_KEY_FEE_TO,
-        process.env.PRIVATE_KEY_USER
+        process.env.PRIVATE_KEY_USER,
+        process.env.PRIVATE_KEY_USER_2
       ],
     },
   },

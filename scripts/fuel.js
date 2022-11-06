@@ -24,6 +24,18 @@ async function mintFOXS() {
     console.log(" - complete");
 }
 
+async function mintFOXS2() {
+    let txRes;
+
+    process.stdout.write("[FOXS] Mint to user2");
+    txRes = await contract.foxs.connect(signer.owner).mint(
+        signer.user2.address,
+        BigInt(1000.0 * (10 ** 18))
+    );
+    await txRes.wait();
+    console.log(" - complete");
+}
+
 async function main() {
     console.log("\n<Set>");
     await set();
@@ -36,6 +48,9 @@ async function main() {
 
     console.log("\n<Mint FOXS>");
     await mintFOXS();
+
+    console.log("\n<Mint FOXS2>");
+    await mintFOXS2();
 }
 
 // run

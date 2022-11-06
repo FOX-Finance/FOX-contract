@@ -38,7 +38,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     uint256 public cap; // total debt cap
 
     address internal _feeTo;
-    uint256 internal _feeRatio; // (_feeRatio / _DENOMINATOR) // stability fee
+    uint256 internal _feeRatio; // (_feeRatio / _DENOMINATOR) // stability fee // TODO: default
 
     // CDP
     mapping(uint256 => CollateralizedDebtPosition) public cdps;
@@ -362,10 +362,12 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         uint256 repayAmount_,
         uint256 withdrawAmount_
     ) external whenNotPaused {
-        _update(id_);
-        _repay(_msgSender(), id_, repayAmount_);
+        address msgSender = _msgSender();
 
-        _withdraw(_msgSender(), id_, withdrawAmount_);
+        _update(id_);
+        _repay(msgSender, id_, repayAmount_);
+
+        _withdraw(msgSender, id_, withdrawAmount_);
     }
 
     // TODO: auction
@@ -481,35 +483,44 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         emit Borrow(account_, id_, amount_);
     }
 
-    // TODO: fromAccount_, toAccount_
     function _repay(
-        address account_,
+        address account_, // from
         uint256 id_,
         uint256 amount_
     ) internal virtual {
         CollateralizedDebtPosition storage _cdp = cdps[id_];
 
-        address feeTo = _feeTo != address(0) ? _feeTo : account_;
+        // fee
+        if ((_feeTo != address(0)) && (_cdp.fee != 0)) {
+            address feeTo = _feeTo;
 
-        // repay fee first
-        if (_cdp.fee >= amount_) {
-            _cdp.fee -= amount_;
-            totalFee -= amount_;
-            if (account_ == address(this)) {
-                _debtToken.safeTransfer(feeTo, amount_);
+            // repay fee first
+            if (_cdp.fee >= amount_) {
+                _cdp.fee -= amount_;
+                totalFee -= amount_;
+                if (account_ == address(this)) {
+                    _debtToken.safeTransfer(feeTo, amount_);
+                } else {
+                    _debtToken.safeTransferFrom(account_, feeTo, amount_);
+                }
             } else {
-                _debtToken.safeTransferFrom(account_, feeTo, amount_);
+                if (account_ == address(this)) {
+                    _debtToken.safeTransfer(feeTo, _cdp.fee);
+                } else {
+                    _debtToken.safeTransferFrom(account_, feeTo, _cdp.fee);
+                }
+                _cdp.debt -= (amount_ - _cdp.fee);
+                totalDebt -= (amount_ - _cdp.fee);
+                ISIN(address(_debtToken)).burnFrom(
+                    account_,
+                    (amount_ - _cdp.fee)
+                );
+                _cdp.fee = 0;
             }
-        } else if (_cdp.fee != 0) {
-            if (account_ == address(this)) {
-                _debtToken.safeTransfer(feeTo, _cdp.fee);
-            } else {
-                _debtToken.safeTransferFrom(account_, feeTo, _cdp.fee);
-            }
-            _cdp.debt -= (amount_ - _cdp.fee);
-            totalDebt -= (amount_ - _cdp.fee);
-            ISIN(address(_debtToken)).burnFrom(account_, amount_ - _cdp.fee);
-            _cdp.fee = 0;
+        } else {
+            _cdp.debt -= amount_;
+            totalDebt -= amount_;
+            ISIN(address(_debtToken)).burnFrom(account_, amount_);
         }
 
         emit Repay(account_, id_, amount_);
@@ -519,6 +530,10 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
      * @dev Updates fee and timestamp.
      */
     function _update(uint256 id_) internal returns (uint256 additionalFee) {
+        if (_feeTo == address(0)) {
+            return 0;
+        }
+
         CollateralizedDebtPosition storage _cdp = cdps[id_];
 
         uint256 prevTimestamp = _cdp.latestUpdate;

@@ -22,6 +22,11 @@ interface IFoxFarm is ICDP {
         view
         returns (uint256 upperBound_, uint256 lowerBound_);
 
+    function shareAmountRangeWhenBuyback(uint256 id_, uint256 shareAmount_)
+        external
+        view
+        returns (uint256 upperBound_, uint256 lowerBound_);
+
     function requiredShareAmountFromCollateralToLtv(
         uint256 id_,
         uint256 newCollateralAmount_,
@@ -76,16 +81,15 @@ interface IFoxFarm is ICDP {
         uint256 amount_
     ) external returns (uint256 shareAmount_, uint256 bonusAmount_);
 
-    function buybackRepayDebt(
-        address account_,
-        uint256 id_,
-        uint256 amount_
-    ) external returns (uint256 debtAmount_);
+    function buybackRepayDebt(uint256 id_, uint256 amount_)
+        external
+        returns (uint256 debtAmount_);
 
     function buybackWithdrawCollateral(
         address account_,
         uint256 id_,
-        uint256 amount_
+        uint256 amount_,
+        uint256 ltv_
     ) external returns (uint256 debtAmount_);
 
     //============ Coupon Operations ============//

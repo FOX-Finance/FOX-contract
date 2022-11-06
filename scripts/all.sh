@@ -9,7 +9,7 @@ dotenv -e .env.test -- npx hardhat run scripts/mint.js --network localhost
 # dotenv -e .env.test -- npx hardhat run scripts/redeem.js --network localhost
 
 # Buyback
-for ((i=0;i<15;i++))
+for ((i=0;i<10;i++))
 do
     echo "Running loop "$i
     curl http://localhost:8545 -H\

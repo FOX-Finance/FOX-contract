@@ -138,7 +138,6 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
             : _defaultLowerBound;
     }
 
-    // TODO: fix
     function ltvRangeWhenBuyback(uint256 id_, uint256 shareAmount_)
         public
         view
@@ -146,18 +145,35 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
     {
         CollateralizedDebtPosition memory _cdp = cdps[id_];
 
-        upperBound_ = currentLTV(id_);
+        upperBound_ = maxLTV;
+
+        uint256 _exchangedSurplusShareAmount = _stableToken
+            .exchangedShareAmountFromDebt(_stableToken.surplusBuybackAmount());
+        _exchangedSurplusShareAmount = _exchangedSurplusShareAmount >=
+            shareAmount_
+            ? shareAmount_
+            : _exchangedSurplusShareAmount;
+        uint256 _debtAmount = _stableToken.exchangedDebtAmountFromShare(
+            _exchangedSurplusShareAmount
+        );
 
         lowerBound_ =
-            ((_cdp.debt + _cdp.fee) * _DENOMINATOR * _DENOMINATOR) /
+            ((_cdp.debt - _debtAmount + _cdp.fee) *
+                _DENOMINATOR *
+                _DENOMINATOR) /
             (_cdp.collateral * _collateralPrice);
-
         uint256 _defaultLowerBound = (_minimumCollateral * _DENOMINATOR) /
             _cdp.collateral;
         lowerBound_ = lowerBound_ > _defaultLowerBound
             ? lowerBound_
             : _defaultLowerBound;
     }
+
+    function shareAmountRangeWhenBuyback(uint256 id_, uint256 shareAmount_)
+        public
+        view
+        returns (uint256 upperBound_, uint256 lowerBound_)
+    {}
 
     // TODO
     // function ltvRangeWhenRecoll(){};
@@ -325,6 +341,7 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         _shareToken.safeTransfer(account_, shareAmount_);
     }
 
+    // TODO: test
     function _close(address account_, uint256 id_) internal override {
         CollateralizedDebtPosition storage _cdp = cdps[id_];
 
@@ -396,50 +413,22 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         );
     }
 
-    function buybackRepayDebt(
-        address account_,
-        uint256 id_,
-        uint256 shareAmount_
-    ) external whenNotPaused onlyGloballyHealthy returns (uint256 debtAmount_) {
-        address msgSender = _msgSender();
-
-        _shareToken.safeTransferFrom(msgSender, address(this), shareAmount_);
-        debtAmount_ = _stableToken.buyback(account_, shareAmount_);
-
-        _update(id_);
-        _repay(msgSender, id_, debtAmount_);
-    }
-
-    function buybackWithdrawCollateral(
-        address account_,
-        uint256 id_,
-        uint256 shareAmount_
-    )
+    function buybackRepayDebt(uint256 id_, uint256 shareAmount_)
         external
         whenNotPaused
-        onlyCdpApprovedOrOwner(_msgSender(), id_)
         onlyGloballyHealthy
         returns (uint256 debtAmount_)
     {
         address msgSender = _msgSender();
 
         _shareToken.safeTransferFrom(msgSender, address(this), shareAmount_);
-        debtAmount_ = _stableToken.buyback(account_, shareAmount_);
-
-        uint256 _currentLTV = currentLTV(id_);
+        debtAmount_ = _stableToken.buyback(address(this), shareAmount_);
 
         _update(id_);
-        _repay(msgSender, id_, debtAmount_);
-
-        uint256 withdrawAmount_ = withdrawCollateralAmountToLTV(
-            id_,
-            _currentLTV,
-            0
-        );
-        _withdraw(msgSender, id_, withdrawAmount_);
+        super._repay(address(this), id_, debtAmount_);
     }
 
-    function buybackToLtv(
+    function buybackWithdrawCollateral(
         address account_,
         uint256 id_,
         uint256 shareAmount_,
@@ -454,13 +443,13 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         address msgSender = _msgSender();
 
         _shareToken.safeTransferFrom(msgSender, address(this), shareAmount_);
-        debtAmount_ = _stableToken.buyback(account_, shareAmount_);
+        debtAmount_ = _stableToken.buyback(address(this), shareAmount_);
 
         _update(id_);
-        _repay(msgSender, id_, debtAmount_);
+        super._repay(address(this), id_, debtAmount_);
 
         uint256 withdrawAmount_ = withdrawCollateralAmountToLTV(id_, ltv_, 0);
-        _withdraw(msgSender, id_, withdrawAmount_);
+        _withdraw(account_, id_, withdrawAmount_);
     }
 
     //============ Coupon Operations ============//
