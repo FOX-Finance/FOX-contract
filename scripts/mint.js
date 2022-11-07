@@ -56,9 +56,19 @@ async function balances() {
     console.log(" - complete:\t\t", balance / (10 ** 18));
 }
 
-async function getLtvRange(id, collateralAmount) {
+async function getDefaultValues(account, id) {
+    process.stdout.write("[FoxFarm] Get default values");
+    const res = await contract.foxFarm.defaultValuesMint(account, id);
+    console.log(" - complete:");
+    console.log("\tcollateral:\t", res.collateralAmount_ / (10 ** 18));
+    console.log("\tltv:\t\t", res.ltv_ / 100, "%");
+    console.log("\tshare:\t\t", res.shareAmount_ / (10 ** 18));
+    console.log("\tstable:\t\t", res.stableAmount_ / (10 ** 18));
+}
+
+async function getLtvRange(id, collateralAmount, shareAmount) {
     process.stdout.write("[FoxFarm] Get LTV range");
-    const res = await contract.foxFarm.ltvRangeWhenMint(id, collateralAmount);
+    const res = await contract.foxFarm.ltvRangeWhenMint(id, collateralAmount, shareAmount);
     console.log(" - complete:");
     console.log("\tupperBound:\t", res.upperBound_ / 100, "%");
     console.log("\tlowerBound:\t", res.lowerBound_ / 100, "%");
@@ -128,21 +138,29 @@ async function main() {
     console.log("\n<Approve FOXS>");
     await approveFOXS();
 
-    console.log("\n<Before: Balances>");
-    await balances();
+    console.log("\nGet default values");
+    await getDefaultValues(
+        signer.user.address,
+        BigInt(0)
+    );
 
-    const collateralAmount = BigInt(10.00 * (10 ** 18));
+    const collateralAmount = BigInt(1000 * (10 ** 18));
+    const shareAmount = BigInt(1000 * (10 ** 18));
     const ltv = BigInt(40 * 100);
 
     console.log("\n<Get LTV range>");
     await getLtvRange(
         BigInt(0),
-        collateralAmount
+        collateralAmount,
+        shareAmount
     );
+
+    process.exit(1);
+    // TODO
 
     // Case 1: Input WETH & LTV
     console.log("\n<Get required FOXS amount>");
-    const shareAmount = await getRequiredFoxsAmount(collateralAmount, ltv);
+    requiredShareAmount = await getRequiredFoxsAmount(collateralAmount, ltv);
 
     // Case 2: Input FOXS
     console.log("\n<Get required WETH amount>");
@@ -151,6 +169,10 @@ async function main() {
     console.log("\n<Compare results>");
     const expectedStableAmount1 = await getExpectedFoxAmount(collateralAmount, shareAmount, ltv);
     const expectedStableAmount2 = await getExpectedFoxAmount(requiredCollateralAmount, shareAmount, ltv);
+
+
+    console.log("\n<Before: Balances>");
+    await balances();
 
     console.log("\n<Mint FOX>");
     await mintFOX(collateralAmount, expectedStableAmount1);

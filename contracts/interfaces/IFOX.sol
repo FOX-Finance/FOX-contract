@@ -12,6 +12,12 @@ interface IFOX {
         ultra
     }
 
+    function trustLevel() external view returns (uint256);
+
+    function stablePrice() external view returns (uint256);
+
+    function sharePrice() external view returns (uint256);
+
     function mintFeeRatio() external view returns (uint256);
 
     function burnFeeRatio() external view returns (uint256);
@@ -65,12 +71,6 @@ interface IFOX {
     function updateStep(Step step_) external;
 
     //============ Trust-related View Functions ============//
-
-    function trustLevel() external view returns (uint256);
-
-    function getStablePrice() external view returns (uint256);
-
-    function getSharePrice() external view returns (uint256);
 
     function currentTrustLevel() external view returns (uint256);
 

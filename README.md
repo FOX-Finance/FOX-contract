@@ -87,7 +87,9 @@ TBD
 
 ### Depositing Collateral
 
-- Anyone
+- Only CDP Owner
+
+Because of debt fee.
 
 ```
                     MAX LTV: L%
@@ -307,6 +309,7 @@ $ dotenv -e .env.test -- npx hardhat run scripts/mint.js --network localhost
 - [x] WARNING or Restriction when protocol trust touches 100% collateral backing level
 - [ ] update first (modifier)
 - [ ] Refactoring interfaces
+- [ ] feeTo -> share fees to FOXS holders
 
 # Future Work
 - [ ] Frontend advanced page

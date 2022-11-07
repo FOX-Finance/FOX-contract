@@ -34,7 +34,7 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
 
     uint256 private constant _TARGET_PRICE = 10000; // $1
     uint256 private _stablePrice = _TARGET_PRICE;
-    uint256 private _sharePrice = _TARGET_PRICE; // TODO: initial share price
+    uint256 private _sharePrice = 4000; // TODO: initial share price
     // treats SIN and Stablecoin are always $1.
 
     uint256 private constant _DENOMINATOR = 10000;
@@ -199,11 +199,11 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
 
     //============ Trust-related View Functions ============//
 
-    function getStablePrice() external view returns (uint256) {
+    function stablePrice() external view returns (uint256) {
         return _stablePrice;
     }
 
-    function getSharePrice() external view returns (uint256) {
+    function sharePrice() external view returns (uint256) {
         return _sharePrice;
     }
 

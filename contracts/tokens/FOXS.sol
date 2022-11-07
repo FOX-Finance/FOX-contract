@@ -41,7 +41,7 @@ contract FOXS is IFOXS, ERC20Capped, Ownable {
         // TODO: allocate x% to MerkleAirdrop
         // TODO: allocate x% to Treasury (Community pool)
         // TODO: allocate x% to Foundation & Developers (Lockup & Vesting)
-        _mint(_msgSender(), 10_000 * 1e18); // TODO
+        _mint(_msgSender(), 100_000 * 1e18); // TODO
     }
 
     //============ ERC20-related Functions ============//

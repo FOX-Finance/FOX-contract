@@ -2,13 +2,13 @@ const { signer, contract, set, attach } = require('./set');
 
 async function updatePrice(price, confidence) {
     process.stdout.write("[OracleFeeder] Update FOX price");
-    const beforePrice = await contract.fox.getStablePrice();
+    const beforePrice = await contract.fox.stablePrice();
     const txRes = await contract.oracleFeeder.connect(signer.bot).updateStablePrice(
         price,
         confidence
     );
     await txRes.wait();
-    const afterPrice = await contract.fox.getStablePrice();
+    const afterPrice = await contract.fox.stablePrice();
     console.log(` - complete: ${beforePrice} -> ${afterPrice}`);
 }
 

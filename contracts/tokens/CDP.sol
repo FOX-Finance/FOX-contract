@@ -29,7 +29,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     IERC20 internal immutable _collateralToken;
     IERC20 internal immutable _debtToken;
 
-    uint256 internal _collateralPrice = 10000; // TODO: initial collateral price
+    uint256 internal _collateralPrice = 30000; // TODO: initial collateral price
     // treats SIN is always $1.
 
     uint256 internal constant _DENOMINATOR = 10000;
@@ -67,6 +67,16 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
 
     modifier updateIdFirst(uint256 id_) {
         _update(id_);
+        _;
+    }
+
+    modifier updateIdLast(uint256 id_) {
+        _;
+        _update(id_);
+    }
+
+    modifier idRangeCheck(uint256 id_) {
+        require(id_ < id, "CDP::idRangeCheck: Invalid range of id.");
         _;
     }
 
@@ -255,9 +265,14 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     /**
      * @notice Opens a CDP position.
      */
-    function open() external virtual whenNotPaused returns (uint256 id_) {
+    function open()
+        external
+        virtual
+        updateIdLast(id_)
+        whenNotPaused
+        returns (uint256 id_)
+    {
         id_ = _open(_msgSender());
-        _update(id_);
     }
 
     /**
@@ -312,7 +327,11 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
      *
      * - Do `approve` first.
      */
-    function deposit(uint256 id_, uint256 amount_) external updateIdFirst(id_) whenNotPaused {
+    function deposit(uint256 id_, uint256 amount_)
+        external
+        updateIdFirst(id_)
+        whenNotPaused
+    {
         _deposit(_msgSender(), id_, amount_);
     }
 
@@ -320,7 +339,12 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         uint256 id_,
         uint256 depositAmount_,
         uint256 borrowAmount_
-    ) external whenNotPaused updateIdFirst(id_) onlyCdpApprovedOrOwner(_msgSender(), id_) {
+    )
+        external
+        whenNotPaused
+        updateIdFirst(id_)
+        onlyCdpApprovedOrOwner(_msgSender(), id_)
+    {
         _deposit(_msgSender(), id_, depositAmount_);
         _borrow(_msgSender(), id_, borrowAmount_);
     }
@@ -352,7 +376,11 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     /**
      * @notice Repays `amount_` debts.
      */
-    function repay(uint256 id_, uint256 amount_) external updateIdFirst(id_) whenNotPaused {
+    function repay(uint256 id_, uint256 amount_)
+        external
+        updateIdFirst(id_)
+        whenNotPaused
+    {
         _repay(_msgSender(), id_, amount_);
     }
 
