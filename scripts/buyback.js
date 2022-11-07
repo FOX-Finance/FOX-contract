@@ -181,70 +181,70 @@ async function main() {
     await getCdp(BigInt(0));
 
     // 1. Buyback from other user
-    // console.log("\n<Get LTV range>");
-    // await getLtvRange(
-    //     BigInt(0),
-    //     BigInt(0.1 * (10 ** 18)),
-    // );
-
-    // console.log("\n<Buyback: repay debt from other user>");
-    // await buybackRepayDebt(
-    //     BigInt(0),
-    //     BigInt(0.1 * (10 ** 18))
-    // );
-
-    // console.log("\n<After: Get current LTV>");
-    // ltv = await getLtv(
-    //     BigInt(0)
-    // );
-
-    // console.log("\n<After: Get current CDP info>");
-    // await getCdp(BigInt(0));
-
-    // 2. Buyback from owner
-    console.log("\n<Before: Get current LTV>");
-    ltv = await getLtv(
-        BigInt(0)
-    );
-
-    console.log("\n<Before: Get current CDP info>");
-    await getCdp(BigInt(0));
-
     console.log("\n<Get LTV range>");
     await getLtvRange(
         BigInt(0),
-        BigInt(0.3 * (10 ** 18)),
+        BigInt(0.1 * (10 ** 18)),
     );
 
-    console.log("\n<Get buyback amount>");
-    const collateralAmount = await getBuybackAmount(
+    console.log("\n<Buyback: repay debt from other user>");
+    await buybackRepayDebt(
         BigInt(0),
-        BigInt(0.3 * (10 ** 18)),
-        ltv
-    );
-
-    console.log("\n<Get buyback amount w/ different LTV>");
-    const collateralAmountWithLtv = await getBuybackAmount(
-        BigInt(0),
-        BigInt(0.3 * (10 ** 18)),
-        BigInt(38 * 100)
-    );
-
-    console.log("\n<Buyback: repay debt from owner>");
-    await buybackWithdrawCollateral(
-        signer.user.address,
-        BigInt(0),
-        BigInt(0.3 * (10 ** 18)),
-        BigInt(38 * 100)
+        BigInt(0.1 * (10 ** 18))
     );
 
     console.log("\n<After: Get current LTV>");
-    await getLtv(
+    ltv = await getLtv(
         BigInt(0)
     );
 
     console.log("\n<After: Get current CDP info>");
     await getCdp(BigInt(0));
+
+    // // 2. Buyback from owner
+    // console.log("\n<Before: Get current LTV>");
+    // ltv = await getLtv(
+    //     BigInt(0)
+    // );
+
+    // console.log("\n<Before: Get current CDP info>");
+    // await getCdp(BigInt(0));
+
+    // console.log("\n<Get LTV range>");
+    // await getLtvRange(
+    //     BigInt(0),
+    //     BigInt(0.3 * (10 ** 18)),
+    // );
+
+    // console.log("\n<Get buyback amount>");
+    // const collateralAmount = await getBuybackAmount(
+    //     BigInt(0),
+    //     BigInt(0.3 * (10 ** 18)),
+    //     ltv
+    // );
+
+    // console.log("\n<Get buyback amount w/ different LTV>");
+    // const collateralAmountWithLtv = await getBuybackAmount(
+    //     BigInt(0),
+    //     BigInt(0.3 * (10 ** 18)),
+    //     BigInt(38 * 100)
+    // );
+
+    // console.log("\n<Buyback: repay debt from owner>");
+    // await buybackWithdrawCollateral(
+    //     signer.user.address,
+    //     BigInt(0),
+    //     BigInt(0.3 * (10 ** 18)),
+    //     BigInt(38 * 100)
+    // );
+
+    // console.log("\n<After: Get current LTV>");
+    // await getLtv(
+    //     BigInt(0)
+    // );
+
+    // console.log("\n<After: Get current CDP info>");
+    // await getCdp(BigInt(0));
 }
 
 // run

@@ -12,11 +12,23 @@ async function mintWETH() {
     console.log(" - complete");
 }
 
-async function mintFOXS() {
+async function mintWETH2() {
     let txRes;
 
-    process.stdout.write("[FOXS] Mint");
-    txRes = await contract.foxs.connect(signer.owner).mint(
+    process.stdout.write("[WETH] Mint to user2");
+    txRes = await contract.weth.connect(signer.owner).mint(
+        signer.user2.address,
+        BigInt(1000 * (10 ** 18))
+    );
+    await txRes.wait();
+    console.log(" - complete");
+}
+
+async function transferFOXS() {
+    let txRes;
+
+    process.stdout.write("[FOXS] Transfer");
+    txRes = await contract.foxs.connect(signer.owner).transfer(
         signer.user.address,
         BigInt(327.0 * (10 ** 18))
     );
@@ -24,11 +36,11 @@ async function mintFOXS() {
     console.log(" - complete");
 }
 
-async function mintFOXS2() {
+async function transferFOXS2() {
     let txRes;
 
-    process.stdout.write("[FOXS] Mint to user2");
-    txRes = await contract.foxs.connect(signer.owner).mint(
+    process.stdout.write("[FOXS] Transfer to user2");
+    txRes = await contract.foxs.connect(signer.owner).transfer(
         signer.user2.address,
         BigInt(1000.0 * (10 ** 18))
     );
@@ -46,11 +58,14 @@ async function main() {
     console.log("\n<Mint WETH>");
     await mintWETH();
 
-    console.log("\n<Mint FOXS>");
-    await mintFOXS();
+    console.log("\n<Mint WETH2>");
+    await mintWETH2();
 
-    console.log("\n<Mint FOXS2>");
-    await mintFOXS2();
+    console.log("\n<Transfer FOXS>");
+    await transferFOXS();
+
+    console.log("\n<Transfer FOXS2>");
+    await transferFOXS2();
 }
 
 // run

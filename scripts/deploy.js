@@ -104,6 +104,15 @@ async function init() {
     await txRes.wait();
     console.log(" - complete");
 
+    //============ FOXS ============//
+
+    process.stdout.write("[FOXS]\t\tTransfer Ownership");
+    txRes = await contract.foxs.connect(signer.owner).transferOwnership(
+        contract.fox.address
+    );
+    await txRes.wait();
+    console.log(" - complete");
+
     //============ Oracle ============//
 
     process.stdout.write("[OracleFeeder]\tSubmit FoxFarm and FOX");

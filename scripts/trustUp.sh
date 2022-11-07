@@ -1,4 +1,4 @@
-for ((i=0;i<15;i++))
+for ((i=0;i<10;i++))
 do
     echo "Running loop "$i
     curl http://localhost:8545 -H\
