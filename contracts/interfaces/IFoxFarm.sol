@@ -5,6 +5,7 @@ pragma solidity 0.8.9;
 import "./ICDP.sol";
 
 interface IFoxFarm is ICDP {
+    // TODO: balanceOf
     //============ View Functions ============//
 
     function ltvRangeWhenMint(uint256 id_, uint256 collateralAmount_)
@@ -12,7 +13,22 @@ interface IFoxFarm is ICDP {
         view
         returns (uint256 upperBound_, uint256 lowerBound_);
 
+    // TODO: function collateralAmountRangeWhenMint
+    // TODO: function shareAmountRangeWhenMint
+
     function ltvRangeWhenRedeem(uint256 id_, uint256 collectedStableAmount_)
+        external
+        view
+        returns (uint256 upperBound_, uint256 lowerBound_);
+
+    // TODO: function stableAmountRangeWhenRedeem
+
+    function ltvRangeWhenRecollateralize(uint256 id_, uint256 collateralAmount_)
+        external
+        view
+        returns (uint256 upperBound_, uint256 lowerBound_);
+
+    function collateralAmountRangeWhenRecollateralize(uint256 id_)
         external
         view
         returns (uint256 upperBound_, uint256 lowerBound_);
@@ -22,7 +38,7 @@ interface IFoxFarm is ICDP {
         view
         returns (uint256 upperBound_, uint256 lowerBound_);
 
-    function shareAmountRangeWhenBuyback(uint256 id_, uint256 shareAmount_)
+    function shareAmountRangeWhenBuyback(uint256 id_)
         external
         view
         returns (uint256 upperBound_, uint256 lowerBound_);
@@ -55,7 +71,7 @@ interface IFoxFarm is ICDP {
         view
         returns (uint256 emittedCollateralAmount_, uint256 emittedShareAmount_);
 
-    function exchangedShareAmountFromCollateralWithLtv(
+    function exchangedShareAmountFromCollateralToLtv(
         uint256 id_,
         uint256 collateralAmount_,
         uint256 ltv_
@@ -69,10 +85,10 @@ interface IFoxFarm is ICDP {
 
     //============ FOX Operations ============//
 
-    function recollateralizeBorrowDebt(
+    function recollateralizeBorrowDebtToLtv(
         address account_,
         uint256 id_,
-        uint256 amount_
+        uint256 ltv_
     ) external returns (uint256 shareAmount_, uint256 bonusAmount_);
 
     function recollateralizeDepositCollateral(

@@ -41,17 +41,22 @@ contract FOXS is IFOXS, ERC20Capped, Ownable {
         // TODO: allocate x% to MerkleAirdrop
         // TODO: allocate x% to Treasury (Community pool)
         // TODO: allocate x% to Foundation & Developers (Lockup & Vesting)
-        // _mint(_msgSender(), 1_000_000_000 * 1e18);
+        _mint(_msgSender(), 10_000 * 1e18); // TODO
     }
 
     //============ ERC20-related Functions ============//
 
-    // TODO: deprecate
-    function mint(address account, uint256 amount) external onlyOwner {
+    function mintTo(address account, uint256 amount) external onlyOwner {
         _mint(account, amount);
     }
 
-    // function burn() external public {}
+    function burn(uint256 amount) external {
+        _burn(_msgSender(), amount);
+    }
+
+    function burnFrom(address account, uint256 amount) external onlyOwner {
+        _burn(account, amount);
+    }
 
     //============ MasterChef ============//
 

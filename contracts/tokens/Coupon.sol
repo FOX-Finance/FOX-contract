@@ -109,13 +109,13 @@ contract Coupon is
         _safeMint(toAccount_, id_); // mint NFT
         emit Open(msgSender, id_);
 
+        _update(id_);
+
         // deposit
         ShareGrantPosition storage _sgp = sgps[id_];
         _sgp.share += shareAmount_;
         totalShare += shareAmount_;
         emit Deposit(msgSender, id_, shareAmount_);
-
-        _update(id_);
 
         // borrow
         _sgp.grant += grantAmount_;

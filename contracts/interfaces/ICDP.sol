@@ -93,7 +93,7 @@ interface ICDP {
 
     function getCollateralPrice() external view returns (uint256);
 
-    function borrowAmountToLTV(
+    function borrowDebtAmountToLTV(
         uint256 id_,
         uint256 ltv_,
         uint256 collateralAmount_

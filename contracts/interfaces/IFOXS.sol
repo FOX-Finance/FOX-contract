@@ -59,7 +59,11 @@ interface IFOXS {
 
     //============ ERC20-related Functions ============//
 
-    function mint(address account, uint256 amount) external;
+    function mintTo(address account, uint256 amount) external;
+
+    function burn(uint256 amount) external;
+    
+    function burnFrom(address account, uint256 amount) external;
 
     //============ MasterChef ============//
     function poolLength() external view returns (uint256 pools);

@@ -10,19 +10,19 @@ import "../utils/Nonzero.sol";
 import "../interfaces/ISIN.sol";
 
 abstract contract abstractSIN is ISIN, ERC20, Ownable {
-    function approveMax(address spender) public {
+    function approveMax(address spender) external {
         _approve(_msgSender(), spender, type(uint256).max);
     }
 
-    function mintTo(address account, uint256 amount) public onlyOwner {
+    function mintTo(address account, uint256 amount) external onlyOwner {
         _mint(account, amount);
     }
 
-    function burn(uint256 amount) public {
+    function burn(uint256 amount) external {
         _burn(_msgSender(), amount);
     }
 
-    function burnFrom(address account, uint256 amount) public onlyOwner {
+    function burnFrom(address account, uint256 amount) external onlyOwner {
         _burn(account, amount);
     }
 }

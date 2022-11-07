@@ -174,7 +174,7 @@ interface IFOX {
         external
         returns (uint256 debtAmount_, uint256 shareAmount_);
 
-    //============ Recallateralize & Buyback ============//
+    //============ Recollateralize & Buyback ============//
 
     function recollateralize(address toAccount_, uint256 debtAmount_)
         external

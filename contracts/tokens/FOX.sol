@@ -220,11 +220,11 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
      * Neutal-trusted when `deltaTrust()` == 0.
      */
     function deltaTrust() public view returns (int256) {
-        return int256(_stablePrice - _TARGET_PRICE);
+        return int256(_stablePrice) - int256(_TARGET_PRICE);
     }
 
     function deltaTrustLevel() public view returns (int256) {
-        return int256(currentTrustLevel() - trustLevel);
+        return int256(currentTrustLevel()) - int256(trustLevel);
     }
 
     //============ View Functions ============//
@@ -368,7 +368,7 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         );
     }
 
-    // TODO: fee
+    /// @notice Indicates allowable recoll amount
     function shortfallRecollateralizeAmount()
         public
         view
@@ -457,7 +457,7 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         _shareToken.safeTransfer(toAccount_, shareAmount_);
     }
 
-    //============ Recallateralize & Buyback ============//
+    //============ Recollateralize & Buyback ============//
 
     function recollateralize(address toAccount_, uint256 debtAmount_)
         external
@@ -480,9 +480,12 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         shareAmount_ = exchangedShareAmountFromDebt(_shortfallAmount);
         bonusAmount_ = (shareAmount_ * bonusRatio) / _DENOMINATOR;
 
-        // receive
-        _shareToken.safeTransfer(toAccount_, shareAmount_);
-        IFOXS(address(_shareToken)).mint(toAccount_, shareAmount_);
+        // receive (mint)
+        // _shareToken.safeTransfer(toAccount_, shareAmount_);
+        IFOXS(address(_shareToken)).mintTo(
+            toAccount_,
+            shareAmount_ + bonusAmount_
+        );
     }
 
     function buyback(address toAccount_, uint256 shareAmount_)
@@ -499,10 +502,14 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
             ? shareAmount_
             : _exchangedSurplusShareAmount;
 
-        // send
-        _shareToken.safeTransferFrom(
+        // send (burn)
+        // _shareToken.safeTransferFrom(
+        //     _msgSender(),
+        //     address(this),
+        //     _exchangedSurplusShareAmount
+        // );
+        IFOXS(address(_shareToken)).burnFrom(
             _msgSender(),
-            address(this),
             _exchangedSurplusShareAmount
         );
 

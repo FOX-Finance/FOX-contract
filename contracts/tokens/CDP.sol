@@ -65,6 +65,11 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         _;
     }
 
+    modifier updateIdFirst(uint256 id_) {
+        _update(id_);
+        _;
+    }
+
     //============ Initialize ============//
 
     constructor(
@@ -219,8 +224,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         return _collateralPrice;
     }
 
-    // TODO: fee?
-    function borrowAmountToLTV(
+    function borrowDebtAmountToLTV(
         uint256 id_,
         uint256 ltv_,
         uint256 collateralAmount_
@@ -240,7 +244,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         CollateralizedDebtPosition memory _cdp = cdps[id_];
         collateralAmount_ =
             _cdp.collateral -
-            ((_cdp.debt - debtAmount_ + _cdp.fee) *
+            ((_cdp.debt + _cdp.fee - debtAmount_) *
                 _DENOMINATOR *
                 _DENOMINATOR) /
             (ltv_ * _collateralPrice);
@@ -273,8 +277,8 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         address msgSender = _msgSender();
 
         id_ = _open(msgSender);
-        _deposit(msgSender, id_, amount_);
         _update(id_);
+        _deposit(msgSender, id_, amount_);
     }
 
     function openAndDepositAndBorrow(
@@ -284,9 +288,8 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         address msgSender = _msgSender();
 
         id_ = _open(msgSender);
-        _deposit(msgSender, id_, depositAmount_);
         _update(id_);
-
+        _deposit(msgSender, id_, depositAmount_);
         _borrow(msgSender, id_, borrowAmount_);
     }
 
@@ -295,10 +298,10 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
      */
     function close(uint256 id_)
         external
+        updateIdFirst(id_)
         whenNotPaused
         onlyCdpApprovedOrOwner(_msgSender(), id_)
     {
-        _update(id_);
         _close(_msgSender(), id_);
     }
 
@@ -309,19 +312,16 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
      *
      * - Do `approve` first.
      */
-    function deposit(uint256 id_, uint256 amount_) external whenNotPaused {
+    function deposit(uint256 id_, uint256 amount_) external updateIdFirst(id_) whenNotPaused {
         _deposit(_msgSender(), id_, amount_);
-        _update(id_);
     }
 
     function depositAndBorrow(
         uint256 id_,
         uint256 depositAmount_,
         uint256 borrowAmount_
-    ) external whenNotPaused onlyCdpApprovedOrOwner(_msgSender(), id_) {
+    ) external whenNotPaused updateIdFirst(id_) onlyCdpApprovedOrOwner(_msgSender(), id_) {
         _deposit(_msgSender(), id_, depositAmount_);
-        _update(id_);
-
         _borrow(_msgSender(), id_, borrowAmount_);
     }
 
@@ -330,10 +330,10 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
      */
     function withdraw(uint256 id_, uint256 amount_)
         external
+        updateIdFirst(id_)
         whenNotPaused
         onlyCdpApprovedOrOwner(_msgSender(), id_)
     {
-        _update(id_);
         _withdraw(_msgSender(), id_, amount_);
     }
 
@@ -342,18 +342,17 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
      */
     function borrow(uint256 id_, uint256 amount_)
         external
+        updateIdFirst(id_)
         whenNotPaused
         onlyCdpApprovedOrOwner(_msgSender(), id_)
     {
-        _update(id_);
         _borrow(_msgSender(), id_, amount_);
     }
 
     /**
      * @notice Repays `amount_` debts.
      */
-    function repay(uint256 id_, uint256 amount_) external whenNotPaused {
-        _update(id_);
+    function repay(uint256 id_, uint256 amount_) external updateIdFirst(id_) whenNotPaused {
         _repay(_msgSender(), id_, amount_);
     }
 
@@ -361,21 +360,15 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         uint256 id_,
         uint256 repayAmount_,
         uint256 withdrawAmount_
-    ) external whenNotPaused {
+    ) external updateIdFirst(id_) whenNotPaused {
         address msgSender = _msgSender();
-
-        _update(id_);
         _repay(msgSender, id_, repayAmount_);
-
         _withdraw(msgSender, id_, withdrawAmount_);
     }
 
     // TODO: auction
-    function liquidate(uint256 id_) external {
-        _update(id_);
-
+    function liquidate(uint256 id_) external updateIdFirst(id_) {
         require(!isSafe(id_), "CDP::liquidate: CDP must be unsafe.");
-
         _close(_msgSender(), id_);
     }
 
