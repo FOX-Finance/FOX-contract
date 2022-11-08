@@ -311,6 +311,7 @@ $ dotenv -e .env.test -- npx hardhat run scripts/mint.js --network localhost
 - [ ] Refactoring interfaces
 - [ ] `feeTo` -> share fees to FOXS holders
 - [ ] PSM
+- [ ] "Swap is more cheaper" message
 
 # Future Work
 - [ ] Frontend advanced page
@@ -334,6 +335,6 @@ $ dotenv -e .env.test -- npx hardhat run scripts/mint.js --network localhost
 - [ ] Over the liquid: Collateral Hedge (maybe delta neutral)
 - [ ] NFT Market & Auction / Or adopting non-collateral lending feature
 - [ ] Zap (FOXS <-> BNB)
-- [ ] (optional) Swap
-- [ ] (optional) Multichain
+- [ ] Swap
+- [ ] Multichain
 -->

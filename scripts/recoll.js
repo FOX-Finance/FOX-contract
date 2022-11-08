@@ -63,6 +63,15 @@ async function getCdp(id) {
     console.log("\tfee:\t\t", cdp.fee / (10 ** 18));
 }
 
+async function getDefaultValues(account, id) {
+    process.stdout.write("[FoxFarm] Get default values");
+    const res = await contract.foxFarm.defaultValuesRecollateralize(account, id);
+    console.log(" - complete:");
+    console.log("\tcollateral:\t", res.collateralAmount_ / (10 ** 18));
+    console.log("\tltv:\t\t", res.ltv_ / 100, "%");
+    console.log("\tshare:\t\t", res.shareAmount_ / (10 ** 18));
+}
+
 async function getShortfallRecollateralizeAmount() {
     process.stdout.write("[FOX] Get shortfall debt amount");
     const debtAmount = await contract.fox.shortfallRecollateralizeAmount();
@@ -128,19 +137,28 @@ async function main() {
     console.log("\n<Approve WETH2>");
     await approveWETH2();
 
+    const cid = BigInt(0);
+
+    console.log("\nGet default values");
+    await getDefaultValues(
+        signer.user.address,
+        cid
+    );
+
     console.log("\n<Get trust level>");
     await getTrustLevel();
 
     console.log("\n<Get shortfall debt amount>");
     await getShortfallRecollateralizeAmount();
 
-    console.log("\n<Before: Get current LTV>");
-    let ltv = await getLtv(
-        BigInt(0)
-    );
+    console.log("\n<Get current LTV>");
+    await getLtv(cid);
 
-    console.log("\n<Before: Get current CDP info>");
-    await getCdp(BigInt(0));
+    console.log("\n<Get current CDP info>");
+    await getCdp(cid);
+
+    process.exit(1);
+
 
     // // 1. Recoll from owner
     // console.log("\n<Get LTV range>");

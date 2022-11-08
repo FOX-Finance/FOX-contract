@@ -167,6 +167,11 @@ interface IFOX {
         view
         returns (uint256 shareAmount_);
 
+    function exchangedShareAmountFromDebtWithBonus(uint256 debtAmount_)
+        external
+        view
+        returns (uint256 shareAmount_);
+
     function exchangedDebtAmountFromShare(uint256 shareAmount_)
         external
         view

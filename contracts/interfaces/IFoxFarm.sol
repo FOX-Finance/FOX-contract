@@ -89,6 +89,15 @@ interface IFoxFarm is ICDP {
 
     //============ View Functions (Recoll) ============//
 
+    function defaultValuesRecollateralize(address account_, uint256 id_)
+        external
+        view
+        returns (
+            uint256 collateralAmount_,
+            uint256 ltv_,
+            uint256 shareAmount_
+        );
+
     function ltvRangeWhenRecollateralize(uint256 id_, uint256 collateralAmount_)
         external
         view
@@ -98,6 +107,14 @@ interface IFoxFarm is ICDP {
         external
         view
         returns (uint256 upperBound_, uint256 lowerBound_);
+
+    function exchangedCollateralAmountFromShareToLtv(
+        uint256 id_,
+        uint256 shareAmount_,
+        uint256 ltv_
+    ) external view returns (uint256 collateralAmount_);
+
+    //============ View Functions (Buyback) ============//
 
     function ltvRangeWhenBuyback(uint256 id_, uint256 shareAmount_)
         external
@@ -114,12 +131,6 @@ interface IFoxFarm is ICDP {
         uint256 collateralAmount_,
         uint256 ltv_
     ) external view returns (uint256 shareAmount_);
-
-    function exchangedCollateralAmountFromShareToLtv(
-        uint256 id_,
-        uint256 shareAmount_,
-        uint256 ltv_
-    ) external view returns (uint256 collateralAmount_);
 
     //============ FOX Operations ============//
 

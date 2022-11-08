@@ -166,6 +166,8 @@ async function main() {
     console.log("\n<Approve FOX2>");
     await approveFOX2();
 
+    const cid = BigInt(0);
+
     console.log("\n<Get trust level>");
     await getTrustLevel();
 
@@ -173,12 +175,10 @@ async function main() {
     await getSurplusBuybackamount();
 
     console.log("\n<Before: Get current LTV>");
-    let ltv = await getLtv(
-        BigInt(0)
-    );
+    await getLtv(cid);
 
     console.log("\n<Before: Get current CDP info>");
-    await getCdp(BigInt(0));
+    await getCdp(cid);
 
     // 1. Buyback from other user
     console.log("\n<Get LTV range>");

@@ -53,6 +53,16 @@ async function getLtv(id) {
     return ltv;
 }
 
+async function getDefaultValues(account, id) {
+    process.stdout.write("[FoxFarm] Get default values");
+    const res = await contract.foxFarm.defaultValueRedeem(account, id);
+    console.log(" - complete:");
+    console.log("\tstable:\t\t", res.stableAmount_ / (10 ** 18));
+    console.log("\tcollateral:\t", res.collateralAmount_ / (10 ** 18));
+    console.log("\tltv:\t\t", res.ltv_ / 100, "%");
+    console.log("\tshare:\t\t", res.shareAmount_ / (10 ** 18));
+}
+
 async function getLtvRange(id, stableAmount) {
     process.stdout.write("[FoxFarm] Get LTV range");
     const res = await contract.foxFarm.ltvRangeWhenRedeem(id, stableAmount);
@@ -108,13 +118,17 @@ async function main() {
 
     const cid = BigInt(0);
 
+    console.log("\nGet default values");
+    await getDefaultValues(
+        signer.user.address,
+        cid
+    );
+
     console.log("\n<Get current LTV>");
     await getLtv(cid);
 
     console.log("\n<Get current CDP info>");
     await getCdp(cid);
-
-    console.log("\nGet default values");
 
     const stableAmount = BigInt(1000 * (10 ** 18));
     const ltv = BigInt(50 * 100);

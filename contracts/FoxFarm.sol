@@ -124,13 +124,14 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
     }
 
     // TODO: Zapping in case of out of range. (ex. FOXS -> SIN|WETH)
+    /// @dev LTV range has no `equal` range (only less than and more than) unlike amount-range.
     function ltvRangeWhenMint(
         uint256 id_, // default type(uint256).max
         uint256 collateralAmount_,
         uint256 shareAmount_
     ) public view returns (uint256 upperBound_, uint256 lowerBound_) {
         uint256 _trustLevel = _stableToken.trustLevel();
-        if (_trustLevel <= 1) {
+        if (_trustLevel == 0) {
             return (0, 0);
         }
 
@@ -144,14 +145,14 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
                     _DENOMINATOR) /
                     (_trustLevel *
                         (_cdp.collateral + collateralAmount_) *
-                        _collateralPrice)
+                        _collateralPrice) +
+                    1
             );
 
-            lowerBound_ = max(
-                1, // 0.01%
+            lowerBound_ =
                 (_cdp.debt * _DENOMINATOR * _DENOMINATOR) /
-                    ((_cdp.collateral + collateralAmount_) * _collateralPrice)
-            );
+                ((_cdp.collateral + collateralAmount_) * _collateralPrice) -
+                1;
         } else {
             upperBound_ = min(
                 maxLTV,
@@ -159,10 +160,11 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
                     _stableToken.sharePrice() *
                     (_DENOMINATOR - _trustLevel) *
                     _DENOMINATOR) /
-                    (_trustLevel * (collateralAmount_) * _collateralPrice)
+                    (_trustLevel * (collateralAmount_) * _collateralPrice) +
+                    1
             );
 
-            lowerBound_ = 1;
+            // lowerBound_ = 1 - 1;
         }
     }
 
@@ -270,10 +272,10 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
 
     //============ View Functions (Redeem) ============//
 
-    // TODO
     function defaultValueRedeem(address account_, uint256 id_)
         external
         view
+        idRangeCheck(id_)
         returns (
             uint256 stableAmount_,
             uint256 collateralAmount_,
@@ -283,15 +285,11 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
     {
         stableAmount_ = IERC20(address(_stableToken)).balanceOf(account_);
 
+        ltv_ = currentLTV(id_);
+
         uint256 _debtAmount;
         (_debtAmount, shareAmount_, ) = _stableToken
             .expectedRedeemAmountWithBurnFee(stableAmount_);
-
-        if (id_ < id) {
-            ltv_ = currentLTV(id_);
-        } else {
-            ltv_ = 4000;
-        }
 
         collateralAmount_ = requiredCollateralAmountFromDebtWithLtv(
             _debtAmount,
@@ -300,6 +298,7 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
     }
 
     // TODO: Zapping in case of out of range.
+    /// @dev LTV range has no `equal` range (only less than and more than) unlike amount-range.
     function ltvRangeWhenRedeem(uint256 id_, uint256 stableAmount_)
         public
         view
@@ -308,14 +307,15 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
     {
         CollateralizedDebtPosition memory _cdp = cdps[id_];
 
-        upperBound_ = currentLTV(id_);
+        upperBound_ = currentLTV(id_) + 1;
 
         uint256 _debtAmount = _stableToken
             .requiredDebtAmountFromStableWithBurnFee(stableAmount_);
 
         lowerBound_ =
             ((_cdp.debt - _debtAmount) * _DENOMINATOR * _DENOMINATOR) /
-            (_cdp.collateral * _collateralPrice);
+            (_cdp.collateral * _collateralPrice) -
+            1;
     }
 
     function stableAmountRangeWhenRedeem(address account_, uint256 id_)
@@ -336,31 +336,58 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
     )
         public
         view
+        idRangeCheck(id_)
         returns (uint256 emittedCollateralAmount_, uint256 emittedShareAmount_)
     {
         uint256 _debtAmount;
         (_debtAmount, emittedShareAmount_, ) = _stableToken
             .expectedRedeemAmountWithBurnFee(collectedStableAmount_);
 
-        if (id_ < id) {
-            CollateralizedDebtPosition memory _cdp = cdps[id_];
-            emittedCollateralAmount_ =
-                _cdp.collateral -
-                requiredCollateralAmountFromDebtWithLtv(
-                    _cdp.debt - _debtAmount,
-                    ltv_
-                );
-        } else {
-            emittedCollateralAmount_ = requiredCollateralAmountFromDebtWithLtv(
-                _debtAmount,
+        CollateralizedDebtPosition memory _cdp = cdps[id_];
+        emittedCollateralAmount_ =
+            _cdp.collateral -
+            requiredCollateralAmountFromDebtWithLtv(
+                _cdp.debt - _debtAmount,
                 ltv_
             );
-        }
     }
 
     //============ View Functions (Recoll) ============//
 
+    function defaultValuesRecollateralize(address account_, uint256 id_)
+        public
+        view
+        idRangeCheck(id_)
+        returns (
+            uint256 collateralAmount_,
+            uint256 ltv_,
+            uint256 shareAmount_
+        )
+    {
+        uint256 _hodlCollateralAmount = _collateralToken.balanceOf(account_);
+
+        ltv_ = currentLTV(id_);
+
+        collateralAmount_ = requiredCollateralAmountFromDebtWithLtv(
+            min(
+                expectedDebtAmountFromCollateralToLtv(
+                    _hodlCollateralAmount,
+                    ltv_
+                ),
+                _stableToken.shortfallRecollateralizeAmount()
+            ),
+            ltv_
+        );
+
+        shareAmount_ = exchangedShareAmountFromCollateralToLtv(
+            id_,
+            collateralAmount_,
+            ltv_
+        );
+    }
+
     /// @dev always be same or increasing LTV.
+    /// @dev LTV range has no `equal` range (only less than and more than) unlike amount-range.
     function ltvRangeWhenRecollateralize(uint256 id_, uint256 collateralAmount_)
         public
         view
@@ -405,6 +432,19 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         // lowerBound_ = 0;
     }
 
+    /// @dev for recoll
+    function exchangedShareAmountFromCollateralToLtv(
+        uint256 id_,
+        uint256 collateralAmount_,
+        uint256 ltv_
+    ) public view idRangeCheck(id_) returns (uint256 shareAmount_) {
+        shareAmount_ = _stableToken.exchangedShareAmountFromDebtWithBonus(
+            borrowDebtAmountToLTV(id_, ltv_, collateralAmount_)
+        );
+    }
+
+    //============ View Functions (Buyback) ============//
+
     /// @dev always be same or decreasing LTV.
     function ltvRangeWhenBuyback(uint256 id_, uint256 shareAmount_)
         public
@@ -447,20 +487,6 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         );
 
         // lowerBound_ = 0;
-    }
-
-    /// @dev for recoll
-    function exchangedShareAmountFromCollateralToLtv(
-        uint256 id_,
-        uint256 collateralAmount_,
-        uint256 ltv_
-    ) public view returns (uint256 shareAmount_) {
-        shareAmount_ = _stableToken.exchangedShareAmountFromDebt(
-            borrowDebtAmountToLTV(id_, ltv_, collateralAmount_)
-        );
-        shareAmount_ =
-            (shareAmount_ * (_DENOMINATOR + _stableToken.bonusRatio())) /
-            _DENOMINATOR;
     }
 
     /// @dev for buyback

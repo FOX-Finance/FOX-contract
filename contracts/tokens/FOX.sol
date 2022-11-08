@@ -332,6 +332,8 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
             (_DENOMINATOR);
     }
 
+    //============ View Functions (Mint) ============//
+
     function expectedMintAmount(uint256 debtAmount_, uint256 shareAmount_)
         public
         view
@@ -366,6 +368,8 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         stableAmount_ -= mintFee_;
     }
 
+    //============ View Functions (Redeem) ============//
+
     function expectedRedeemAmount(uint256 stableAmount_)
         public
         view
@@ -390,7 +394,7 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         );
     }
 
-    //////////////
+    //============ View Functions (Recoll) ============//
 
     /// @notice Indicates allowable recoll amount
     function shortfallRecollateralizeAmount()
@@ -404,20 +408,32 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
             _debtToken.balanceOf(address(this));
     }
 
-    /// @notice Indicates allowable buyback amount
-    function surplusBuybackAmount() public view returns (uint256 debtAmount_) {
-        return
-            _debtToken.balanceOf(address(this)) -
-            (totalSupply() * (_DENOMINATOR - trustLevel)) /
-            _DENOMINATOR;
-    }
-
     function exchangedShareAmountFromDebt(uint256 debtAmount_)
         public
         view
         returns (uint256 shareAmount_)
     {
         shareAmount_ = (debtAmount_ * _DENOMINATOR) / (_sharePrice);
+    }
+
+    function exchangedShareAmountFromDebtWithBonus(uint256 debtAmount_)
+        public
+        view
+        returns (uint256 shareAmount_)
+    {
+        shareAmount_ =
+            (debtAmount_ * (_DENOMINATOR + bonusRatio)) /
+            (_sharePrice);
+    }
+
+    //============ View Functions (Buyback) ============//
+
+    /// @notice Indicates allowable buyback amount
+    function surplusBuybackAmount() public view returns (uint256 debtAmount_) {
+        return
+            _debtToken.balanceOf(address(this)) -
+            (totalSupply() * (_DENOMINATOR - trustLevel)) /
+            _DENOMINATOR;
     }
 
     function exchangedDebtAmountFromShare(uint256 shareAmount_)
