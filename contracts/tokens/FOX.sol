@@ -199,11 +199,11 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
 
     //============ Trust-related View Functions ============//
 
-    function stablePrice() external view returns (uint256) {
+    function stablePrice() public view returns (uint256) {
         return _stablePrice;
     }
 
-    function sharePrice() external view returns (uint256) {
+    function sharePrice() public view returns (uint256) {
         return _sharePrice;
     }
 
@@ -240,7 +240,7 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
     }
 
     /// @dev Uses to `repay()` in `close()`. Must consider burn fee.
-    function requiredStableAmountFromDebtWithFee(uint256 debtAmount_)
+    function requiredStableAmountFromDebtWithBurnFee(uint256 debtAmount_)
         public
         view
         returns (uint256 stableAmount_)
@@ -269,7 +269,7 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
     }
 
     /// @dev Uses to `borrow()`. Must consider mint fee.
-    function requiredShareAmountFromStableWithFee(uint256 stableAmount_)
+    function requiredShareAmountFromStableWithMintFee(uint256 stableAmount_)
         public
         view
         returns (uint256 shareAmount_)
@@ -277,6 +277,17 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         shareAmount_ =
             (stableAmount_ * _DENOMINATOR * trustLevel) /
             ((_DENOMINATOR - mintFeeRatio) * _sharePrice);
+    }
+
+    function requiredShareAmountFromStableWithBurnFee(uint256 stableAmount_)
+        public
+        view
+        returns (uint256 shareAmount_)
+    {
+        uint256 burnFee_ = (stableAmount_ * burnFeeRatio) / _DENOMINATOR;
+        shareAmount_ =
+            ((stableAmount_ - burnFee_) * _DENOMINATOR * trustLevel) /
+            (_DENOMINATOR * _sharePrice);
     }
 
     function requiredDebtAmountFromShare(uint256 shareAmount_)
@@ -300,7 +311,7 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
     }
 
     /// @dev Uses to `borrow()`. Must consider mint fee.
-    function requiredDebtAmountFromStableWithFee(uint256 stableAmount_)
+    function requiredDebtAmountFromStableWithMintFee(uint256 stableAmount_)
         public
         view
         returns (uint256 debtAmount_)
@@ -308,6 +319,17 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         debtAmount_ =
             (stableAmount_ * (_DENOMINATOR - trustLevel)) /
             (_DENOMINATOR - mintFeeRatio);
+    }
+
+    function requiredDebtAmountFromStableWithBurnFee(uint256 stableAmount_)
+        public
+        view
+        returns (uint256 debtAmount_)
+    {
+        uint256 burnFee_ = (stableAmount_ * burnFeeRatio) / _DENOMINATOR;
+        debtAmount_ =
+            ((stableAmount_ - burnFee_) * (_DENOMINATOR - trustLevel)) /
+            (_DENOMINATOR);
     }
 
     function expectedMintAmount(uint256 debtAmount_, uint256 shareAmount_)
@@ -335,7 +357,7 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
             (_DENOMINATOR);
     }
 
-    function expectedMintAmountWithFee(
+    function expectedMintAmountWithMintFee(
         uint256 debtAmount_,
         uint256 shareAmount_
     ) public view returns (uint256 stableAmount_, uint256 mintFee_) {
@@ -353,7 +375,7 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         shareAmount_ = requiredShareAmountFromStable(stableAmount_);
     }
 
-    function expectedRedeemAmountWithFee(uint256 stableAmount_)
+    function expectedRedeemAmountWithBurnFee(uint256 stableAmount_)
         public
         view
         returns (
@@ -367,6 +389,8 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
             stableAmount_ - burnFee_
         );
     }
+
+    //////////////
 
     /// @notice Indicates allowable recoll amount
     function shortfallRecollateralizeAmount()
@@ -420,7 +444,7 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         // fee
         if (_feeTo != address(0)) {
             uint256 _fee;
-            (stableAmount_, _fee) = expectedMintAmountWithFee(
+            (stableAmount_, _fee) = expectedMintAmountWithMintFee(
                 debtAmount_,
                 shareAmount_
             );
@@ -444,7 +468,7 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         // fee
         if (_feeTo != address(0)) {
             uint256 _fee;
-            (debtAmount_, shareAmount_, _fee) = expectedRedeemAmountWithFee(
+            (debtAmount_, shareAmount_, _fee) = expectedRedeemAmountWithBurnFee(
                 stableAmount_
             );
             _mint(_feeTo, _fee);

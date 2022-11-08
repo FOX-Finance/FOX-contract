@@ -74,6 +74,22 @@ async function getLtvRange(id, collateralAmount, shareAmount) {
     console.log("\tlowerBound:\t", res.lowerBound_ / 100, "%");
 }
 
+async function getCollateralAmountRange(account, id, ltv, shareAmount) {
+    process.stdout.write("[FoxFarm] Get WETH range");
+    const res = await contract.foxFarm.collateralAmountRangeWhenMint(account, id, ltv, shareAmount);
+    console.log(" - complete:");
+    console.log("\tupperBound:\t", res.upperBound_ / (10 ** 18));
+    console.log("\tlowerBound:\t", res.lowerBound_ / (10 ** 18));
+}
+
+async function getShareAmountRange(account, id, collateralAmount, ltv) {
+    process.stdout.write("[FoxFarm] Get FOXS range");
+    const res = await contract.foxFarm.shareAmountRangeWhenMint(account, id, collateralAmount, ltv);
+    console.log(" - complete:");
+    console.log("\tupperBound:\t", res.upperBound_ / (10 ** 18));
+    console.log("\tlowerBound:\t", res.lowerBound_ / (10 ** 18));
+}
+
 async function getRequiredFoxsAmount(collateralAmount, ltv) {
     process.stdout.write("[FoxFarm] Get required FOXS");
     const shareAmount = await contract.foxFarm.requiredShareAmountFromCollateralToLtv(
@@ -138,38 +154,53 @@ async function main() {
     console.log("\n<Approve FOXS>");
     await approveFOXS();
 
+    const cid = BigInt(0);
+
     console.log("\nGet default values");
     await getDefaultValues(
         signer.user.address,
-        BigInt(0)
+        cid
     );
 
     const collateralAmount = BigInt(1000 * (10 ** 18));
-    const shareAmount = BigInt(1000 * (10 ** 18));
+    const shareAmount = BigInt(800 * (10 ** 18));
     const ltv = BigInt(40 * 100);
 
     console.log("\n<Get LTV range>");
     await getLtvRange(
-        BigInt(0),
+        cid,
         collateralAmount,
         shareAmount
     );
 
-    process.exit(1);
-    // TODO
+    console.log("\n<Get WETH range>");
+    await getCollateralAmountRange(
+        signer.user.address,
+        cid,
+        ltv,
+        shareAmount
+    );
+
+    console.log("\n<Get FOXS range>");
+    await getShareAmountRange(
+        signer.user.address,
+        cid,
+        collateralAmount,
+        ltv
+    );
 
     // Case 1: Input WETH & LTV
     console.log("\n<Get required FOXS amount>");
-    requiredShareAmount = await getRequiredFoxsAmount(collateralAmount, ltv);
+    const requiredShareAmount = await getRequiredFoxsAmount(collateralAmount, ltv);
 
     // Case 2: Input FOXS
     console.log("\n<Get required WETH amount>");
     const requiredCollateralAmount = await getRequiredWethAmount(shareAmount, ltv);
 
     console.log("\n<Compare results>");
-    const expectedStableAmount1 = await getExpectedFoxAmount(collateralAmount, shareAmount, ltv);
+    const expectedStableAmount1 = await getExpectedFoxAmount(collateralAmount, requiredShareAmount, ltv);
     const expectedStableAmount2 = await getExpectedFoxAmount(requiredCollateralAmount, shareAmount, ltv);
-
+    const expectedStableAmount3 = await getExpectedFoxAmount(collateralAmount, shareAmount, ltv);
 
     console.log("\n<Before: Balances>");
     await balances();

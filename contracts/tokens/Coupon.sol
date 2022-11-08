@@ -16,14 +16,14 @@ import "../interfaces/ICoupon.sol";
 // import "./interfaces/IWETH.sol";
 
 /**
- * @title Coupon. Share Grant Position.
+ * @title Coupon. Position Discount Coupon.
  * @dev Similar with FoxFarm, but no collaterals, only shares and grants.
  * @author Luke Park (lukepark327@gmail.com)
  * @notice Gets FOXS as share, mints NIS as grant.
  */
 contract Coupon is
     ICoupon,
-    ERC721("Coupon", "FOXSGP"),
+    ERC721("FoxFarm PDC", "PDC"),
     Pausable,
     Ownable,
     Nonzero

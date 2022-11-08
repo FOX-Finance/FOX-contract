@@ -230,7 +230,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         fee_ = _cdp.fee;
     }
 
-    function getCollateralPrice() external view returns (uint256) {
+    function getCollateralPrice() public view returns (uint256) {
         return _collateralPrice;
     }
 
@@ -258,6 +258,24 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
                 _DENOMINATOR *
                 _DENOMINATOR) /
             (ltv_ * _collateralPrice);
+    }
+
+    function requiredCollateralAmountFromDebtWithLtv(
+        uint256 debtAmount_,
+        uint256 ltv_
+    ) public view returns (uint256 collateralAmount_) {
+        collateralAmount_ =
+            (debtAmount_ * _DENOMINATOR * _DENOMINATOR) /
+            (ltv_ * _collateralPrice);
+    }
+
+    function expectedDebtAmountFromCollateralToLtv(
+        uint256 collateralAmount_,
+        uint256 ltv_
+    ) public view returns (uint256 debtAmount_) {
+        debtAmount_ =
+            (collateralAmount_ * _collateralPrice * ltv_) /
+            (_DENOMINATOR * _DENOMINATOR);
     }
 
     //============ CDP Operations ============//

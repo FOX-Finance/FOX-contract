@@ -50,8 +50,8 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         nonzeroAddress(debtToken_)
         nonzeroAddress(shareToken_)
         CDP(
-            "FoxFarm",
-            "FOXCDP",
+            "FoxFarm CDP",
+            "CDP",
             oracleFeeder_,
             feeTo_,
             collateralToken_,
@@ -75,21 +75,9 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         ApproveMaxERC20(address(_shareToken)).approveMax(address(_stableToken));
     }
 
-    //============ View Functions (Mint) ============//
+    //============ View Functions ============//
 
-    function _newDebtAmountToLtv(
-        uint256 id_,
-        uint256 newCollateralAmount_,
-        uint256 ltv_
-    ) internal view returns (uint256 newDebtAmount_) {
-        CollateralizedDebtPosition memory _cdp = cdps[id_];
-        newDebtAmount_ =
-            (ltv_ *
-                (_cdp.collateral + newCollateralAmount_) *
-                _collateralPrice) /
-            (_DENOMINATOR * _DENOMINATOR) -
-            (_cdp.debt + _cdp.fee);
-    }
+    //============ View Functions (Mint) ============//
 
     function defaultValuesMint(address account_, uint256 id_)
         external
@@ -107,33 +95,32 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         uint256 _debtAmount;
         if (id_ < id) {
             ltv_ = currentLTV(id_);
-            _debtAmount = _newDebtAmountToLtv(id_, _hodlCollateralAmount, ltv_);
+            _debtAmount = borrowDebtAmountToLTV(
+                id_,
+                _hodlCollateralAmount,
+                ltv_
+            );
         } else {
             ltv_ = 4000;
-            _debtAmount =
-                (_hodlCollateralAmount * _collateralPrice * ltv_) /
-                (_DENOMINATOR * _DENOMINATOR);
-        }
-
-        uint256 _requiredDebtAmount;
-        shareAmount_ = _stableToken.requiredShareAmountFromDebt(_debtAmount);
-        if (shareAmount_ > _hodlShareAmount) {
-            _requiredDebtAmount = _stableToken.requiredDebtAmountFromShare(
-                _hodlShareAmount
+            _debtAmount = expectedDebtAmountFromCollateralToLtv(
+                _hodlCollateralAmount,
+                ltv_
             );
-            shareAmount_ = _hodlShareAmount;
-        } else {
-            _requiredDebtAmount = _debtAmount;
         }
 
-        (stableAmount_, ) = _stableToken.expectedMintAmountWithFee(
-            _requiredDebtAmount,
-            shareAmount_
+        (stableAmount_, ) = _stableToken.expectedMintAmountWithMintFee(
+            _debtAmount,
+            _hodlShareAmount
         );
 
-        collateralAmount_ =
-            (_requiredDebtAmount * _DENOMINATOR * _DENOMINATOR) /
-            (ltv_ * _collateralPrice);
+        collateralAmount_ = requiredCollateralAmountFromDebtWithLtv(
+            _stableToken.requiredDebtAmountFromStableWithMintFee(stableAmount_),
+            ltv_
+        );
+
+        shareAmount_ = _stableToken.requiredShareAmountFromStableWithMintFee(
+            stableAmount_
+        );
     }
 
     // TODO: Zapping in case of out of range. (ex. FOXS -> SIN|WETH)
@@ -184,7 +171,7 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         uint256 id_,
         uint256 ltv_,
         uint256 shareAmount_
-    ) external view returns (uint256 upperBound_, uint256 lowerBound_) {
+    ) public view returns (uint256 upperBound_, uint256 lowerBound_) {
         upperBound_ = _collateralToken.balanceOf(account_);
 
         lowerBound_ = requiredCollateralAmountFromShareToLtv(
@@ -199,7 +186,7 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         uint256 id_,
         uint256 collateralAmount_,
         uint256 ltv_
-    ) external view returns (uint256 upperBound_, uint256 lowerBound_) {
+    ) public view returns (uint256 upperBound_, uint256 lowerBound_) {
         upperBound_ = _shareToken.balanceOf(account_);
 
         lowerBound_ = requiredShareAmountFromCollateralToLtv(
@@ -216,11 +203,16 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
     ) public view returns (uint256 shareAmount_) {
         uint256 _debtAmount;
         if (id_ < id) {
-            _debtAmount = _newDebtAmountToLtv(id_, newCollateralAmount_, ltv_);
+            _debtAmount = borrowDebtAmountToLTV(
+                id_,
+                newCollateralAmount_,
+                ltv_
+            );
         } else {
-            _debtAmount =
-                (newCollateralAmount_ * _collateralPrice * ltv_) /
-                (_DENOMINATOR * _DENOMINATOR);
+            _debtAmount = expectedDebtAmountFromCollateralToLtv(
+                newCollateralAmount_,
+                ltv_
+            );
         }
 
         shareAmount_ = _stableToken.requiredShareAmountFromDebt(_debtAmount);
@@ -238,28 +230,77 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         if (id_ < id) {
             CollateralizedDebtPosition memory _cdp = cdps[id_];
             collateralAmount_ =
-                ((_cdp.debt + _debtAmount) * _DENOMINATOR * _DENOMINATOR) /
-                (ltv_ * _collateralPrice) -
+                requiredCollateralAmountFromDebtWithLtv(
+                    (_cdp.debt + _debtAmount),
+                    ltv_
+                ) -
                 _cdp.collateral;
 
-            collateralAmount_ = collateralAmount_ + _cdp.collateral >=
-                _minimumCollateral
-                ? collateralAmount_
-                : _minimumCollateral - _cdp.collateral;
+            collateralAmount_ = max(
+                collateralAmount_,
+                _minimumCollateral - _cdp.collateral
+            );
         } else {
-            collateralAmount_ =
-                (_debtAmount * _DENOMINATOR * _DENOMINATOR) /
-                (ltv_ * _collateralPrice);
+            collateralAmount_ = requiredCollateralAmountFromDebtWithLtv(
+                _debtAmount,
+                ltv_
+            );
 
             collateralAmount_ = max(collateralAmount_, _minimumCollateral);
         }
     }
 
-    // TODO
+    function expectedMintAmountToLtv(
+        uint256 id_,
+        uint256 newCollateralAmount_,
+        uint256 ltv_,
+        uint256 newShareAmount_
+    ) public view returns (uint256 newStableAmount_) {
+        uint256 _debtAmount = borrowDebtAmountToLTV(
+            id_,
+            newCollateralAmount_,
+            ltv_
+        );
+
+        (newStableAmount_, ) = _stableToken.expectedMintAmountWithMintFee(
+            _debtAmount,
+            newShareAmount_
+        );
+    }
+
     //============ View Functions (Redeem) ============//
 
+    // TODO
+    function defaultValueRedeem(address account_, uint256 id_)
+        external
+        view
+        returns (
+            uint256 stableAmount_,
+            uint256 collateralAmount_,
+            uint256 ltv_,
+            uint256 shareAmount_
+        )
+    {
+        stableAmount_ = IERC20(address(_stableToken)).balanceOf(account_);
+
+        uint256 _debtAmount;
+        (_debtAmount, shareAmount_, ) = _stableToken
+            .expectedRedeemAmountWithBurnFee(stableAmount_);
+
+        if (id_ < id) {
+            ltv_ = currentLTV(id_);
+        } else {
+            ltv_ = 4000;
+        }
+
+        collateralAmount_ = requiredCollateralAmountFromDebtWithLtv(
+            _debtAmount,
+            ltv_
+        );
+    }
+
     // TODO: Zapping in case of out of range.
-    function ltvRangeWhenRedeem(uint256 id_, uint256 collectedStableAmount_)
+    function ltvRangeWhenRedeem(uint256 id_, uint256 stableAmount_)
         public
         view
         idRangeCheck(id_)
@@ -269,15 +310,55 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
 
         upperBound_ = currentLTV(id_);
 
-        uint256 _debtAmount = (collectedStableAmount_ *
-            (_DENOMINATOR - _stableToken.burnFeeRatio()) *
-            (_DENOMINATOR - _stableToken.trustLevel())) /
-            (_DENOMINATOR * _DENOMINATOR);
+        uint256 _debtAmount = _stableToken
+            .requiredDebtAmountFromStableWithBurnFee(stableAmount_);
 
         lowerBound_ =
             ((_cdp.debt - _debtAmount) * _DENOMINATOR * _DENOMINATOR) /
             (_cdp.collateral * _collateralPrice);
     }
+
+    function stableAmountRangeWhenRedeem(address account_, uint256 id_)
+        public
+        view
+        idRangeCheck(id_)
+        returns (uint256 upperBound_, uint256 lowerBound_)
+    {
+        upperBound_ = IERC20(address(_stableToken)).balanceOf(account_);
+
+        // lowerBound_ = 0;
+    }
+
+    function expectedRedeemAmountToLtv(
+        uint256 id_,
+        uint256 collectedStableAmount_,
+        uint256 ltv_
+    )
+        public
+        view
+        returns (uint256 emittedCollateralAmount_, uint256 emittedShareAmount_)
+    {
+        uint256 _debtAmount;
+        (_debtAmount, emittedShareAmount_, ) = _stableToken
+            .expectedRedeemAmountWithBurnFee(collectedStableAmount_);
+
+        if (id_ < id) {
+            CollateralizedDebtPosition memory _cdp = cdps[id_];
+            emittedCollateralAmount_ =
+                _cdp.collateral -
+                requiredCollateralAmountFromDebtWithLtv(
+                    _cdp.debt - _debtAmount,
+                    ltv_
+                );
+        } else {
+            emittedCollateralAmount_ = requiredCollateralAmountFromDebtWithLtv(
+                _debtAmount,
+                ltv_
+            );
+        }
+    }
+
+    //============ View Functions (Recoll) ============//
 
     /// @dev always be same or increasing LTV.
     function ltvRangeWhenRecollateralize(uint256 id_, uint256 collateralAmount_)
@@ -368,56 +449,6 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         // lowerBound_ = 0;
     }
 
-    //============ View Functions ============//
-
-    function expectedMintAmountToLtv(
-        uint256 id_,
-        uint256 newCollateralAmount_,
-        uint256 ltv_,
-        uint256 newShareAmount_
-    ) public view returns (uint256 newStableAmount_) {
-        uint256 _debtAmount;
-        if (id_ >= id) {
-            // new
-            _debtAmount =
-                (newCollateralAmount_ * _collateralPrice * ltv_) /
-                (_DENOMINATOR * _DENOMINATOR);
-        } else {
-            _debtAmount = _newDebtAmountToLtv(id_, newCollateralAmount_, ltv_);
-        }
-
-        (newStableAmount_, ) = _stableToken.expectedMintAmountWithFee(
-            _debtAmount,
-            newShareAmount_
-        );
-    }
-
-    function expectedRedeemAmountToLtv(
-        uint256 id_,
-        uint256 collectedStableAmount_,
-        uint256 ltv_
-    )
-        public
-        view
-        returns (uint256 emittedCollateralAmount_, uint256 emittedShareAmount_)
-    {
-        uint256 _debtAmount;
-        (_debtAmount, emittedShareAmount_, ) = _stableToken
-            .expectedRedeemAmountWithFee(collectedStableAmount_);
-
-        if (id_ >= id) {
-            emittedCollateralAmount_ =
-                (_debtAmount * _DENOMINATOR * _DENOMINATOR) /
-                (ltv_ * _collateralPrice);
-        } else {
-            CollateralizedDebtPosition memory _cdp = cdps[id_];
-            emittedCollateralAmount_ =
-                _cdp.collateral -
-                ((_cdp.debt - _debtAmount) * _DENOMINATOR * _DENOMINATOR) /
-                (ltv_ * _collateralPrice);
-        }
-    }
-
     /// @dev for recoll
     function exchangedShareAmountFromCollateralToLtv(
         uint256 id_,
@@ -452,11 +483,10 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         uint256 id_,
         uint256 amount_ // stableAmount
     ) internal override {
-        uint256 debtAmount_ = _stableToken.requiredDebtAmountFromStableWithFee(
-            amount_
-        );
+        uint256 debtAmount_ = _stableToken
+            .requiredDebtAmountFromStableWithMintFee(amount_);
         uint256 shareAmount_ = _stableToken
-            .requiredShareAmountFromStableWithFee(amount_);
+            .requiredShareAmountFromStableWithMintFee(amount_);
 
         super._borrow(address(this), id_, debtAmount_);
 
@@ -494,7 +524,7 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
             _repay(
                 account_,
                 id_,
-                _stableToken.requiredStableAmountFromDebtWithFee(
+                _stableToken.requiredStableAmountFromDebtWithBurnFee(
                     _cdp.debt + _cdp.fee
                 )
             );

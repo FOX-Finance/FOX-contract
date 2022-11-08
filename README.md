@@ -309,7 +309,8 @@ $ dotenv -e .env.test -- npx hardhat run scripts/mint.js --network localhost
 - [x] WARNING or Restriction when protocol trust touches 100% collateral backing level
 - [ ] update first (modifier)
 - [ ] Refactoring interfaces
-- [ ] feeTo -> share fees to FOXS holders
+- [ ] `feeTo` -> share fees to FOXS holders
+- [ ] PSM
 
 # Future Work
 - [ ] Frontend advanced page

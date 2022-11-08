@@ -61,6 +61,14 @@ async function getLtvRange(id, stableAmount) {
     console.log("\tlowerBound:\t", res.lowerBound_ / 100, "%");
 }
 
+async function getFoxRange(account, id) {
+    process.stdout.write("[FOX] Get FOX range");
+    const res = await contract.foxFarm.stableAmountRangeWhenRedeem(account, id);
+    console.log(" - complete:");
+    console.log("\tupperBound:\t", res.upperBound_ / (10 ** 18));
+    console.log("\tlowerBound:\t", res.lowerBound_ / (10 ** 18));
+}
+
 async function getExpectedRedeemAmount(id, stableAmount, ltv) {
     process.stdout.write("[FoxFarm] Get expected redeem amount");
     const res = await contract.foxFarm.expectedRedeemAmountToLtv(
@@ -98,33 +106,47 @@ async function main() {
     console.log("\n<Approve FOX>");
     await approveFOX();
 
-    console.log("\n<Before: Balances>");
-    await balances();
+    const cid = BigInt(0);
 
     console.log("\n<Get current LTV>");
-    const ltv = await getLtv(BigInt(0));
+    await getLtv(cid);
 
     console.log("\n<Get current CDP info>");
-    await getCdp(BigInt(0));
+    await getCdp(cid);
+
+    console.log("\nGet default values");
+
+    const stableAmount = BigInt(1000 * (10 ** 18));
+    const ltv = BigInt(50 * 100);
 
     console.log("\n<Get LTV range>");
     await getLtvRange(
-        BigInt(0),
-        BigInt(4 * (10 ** 18)),
+        cid,
+        stableAmount,
     );
 
+    console.log("\n<Get FOX range>");
+    await getFoxRange(
+        signer.user.address,
+        cid
+    );
+
+    // Input FOX
     console.log("\n<Expected redeem amount>");
     const res = await getExpectedRedeemAmount(
-        BigInt(0),
-        BigInt(4 * (10 ** 18)),
-        BigInt(14.2 * 100)
+        cid,
+        stableAmount,
+        ltv
     );
     const redeemCollateralAmount = res.collateralAmount;
 
+    console.log("\n<Before: Balances>");
+    await balances();
+
     console.log("\n<Redeem FOX>");
     await redeemFOX(
-        BigInt(0), // id
-        BigInt(4 * (10 ** 18)), // repayAmount
+        cid,
+        stableAmount, // repayAmount
         BigInt(redeemCollateralAmount) // withdrawAmount
     );
 
@@ -132,10 +154,10 @@ async function main() {
     await balances();
 
     console.log("\n<Get current LTV>");
-    await getLtv(BigInt(0));
+    await getLtv(cid);
 
     console.log("\n<Get current CDP info>");
-    await getCdp(BigInt(0));
+    await getCdp(cid);
 }
 
 // run

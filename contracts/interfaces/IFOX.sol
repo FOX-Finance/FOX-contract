@@ -85,7 +85,7 @@ interface IFOX {
         view
         returns (uint256 stableAmount_);
 
-    function requiredStableAmountFromDebtWithFee(uint256 debtAmount_)
+    function requiredStableAmountFromDebtWithBurnFee(uint256 debtAmount_)
         external
         view
         returns (uint256 stableAmount_);
@@ -101,7 +101,12 @@ interface IFOX {
         returns (uint256 shareAmount_);
 
     /// @dev Uses to `borrow()`. Must consider mint fee.
-    function requiredShareAmountFromStableWithFee(uint256 stableAmount_)
+    function requiredShareAmountFromStableWithMintFee(uint256 stableAmount_)
+        external
+        view
+        returns (uint256 shareAmount_);
+
+    function requiredShareAmountFromStableWithBurnFee(uint256 stableAmount_)
         external
         view
         returns (uint256 shareAmount_);
@@ -116,7 +121,12 @@ interface IFOX {
         view
         returns (uint256 debtAmount_);
 
-    function requiredDebtAmountFromStableWithFee(uint256 stableAmount_)
+    function requiredDebtAmountFromStableWithMintFee(uint256 stableAmount_)
+        external
+        view
+        returns (uint256 debtAmount_);
+
+    function requiredDebtAmountFromStableWithBurnFee(uint256 stableAmount_)
         external
         view
         returns (uint256 debtAmount_);
@@ -126,7 +136,7 @@ interface IFOX {
         view
         returns (uint256 stableAmount_);
 
-    function expectedMintAmountWithFee(
+    function expectedMintAmountWithMintFee(
         uint256 debtAmount_,
         uint256 shareAmount_
     ) external view returns (uint256 stableAmount_, uint256 mintFee_);
@@ -136,7 +146,7 @@ interface IFOX {
         view
         returns (uint256 debtAmount_, uint256 shareAmount_);
 
-    function expectedRedeemAmountWithFee(uint256 stableAmount_)
+    function expectedRedeemAmountWithBurnFee(uint256 stableAmount_)
         external
         view
         returns (

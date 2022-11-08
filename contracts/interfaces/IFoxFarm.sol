@@ -49,14 +49,45 @@ interface IFoxFarm is ICDP {
         uint256 ltv_
     ) external view returns (uint256 collateralAmount_);
 
+    function expectedMintAmountToLtv(
+        uint256 id_,
+        uint256 newCollateralAmount_,
+        uint256 ltv_,
+        uint256 newShareAmount_
+    ) external view returns (uint256 newStableAmount_);
+
     //============ View Functions (Redeem) ============//
+
+    function defaultValueRedeem(address account_, uint256 id_)
+        external
+        view
+        returns (
+            uint256 stableAmount_,
+            uint256 collateralAmount_,
+            uint256 ltv_,
+            uint256 shareAmount_
+        );
 
     function ltvRangeWhenRedeem(uint256 id_, uint256 collectedStableAmount_)
         external
         view
         returns (uint256 upperBound_, uint256 lowerBound_);
 
-    // TODO: function stableAmountRangeWhenRedeem
+    function stableAmountRangeWhenRedeem(address account_, uint256 id_)
+        external
+        view
+        returns (uint256 upperBound_, uint256 lowerBound_);
+
+    function expectedRedeemAmountToLtv(
+        uint256 id_,
+        uint256 collectedStableAmount_,
+        uint256 ltv_
+    )
+        external
+        view
+        returns (uint256 emittedCollateralAmount_, uint256 emittedShareAmount_);
+
+    //============ View Functions (Recoll) ============//
 
     function ltvRangeWhenRecollateralize(uint256 id_, uint256 collateralAmount_)
         external
@@ -77,22 +108,6 @@ interface IFoxFarm is ICDP {
         external
         view
         returns (uint256 upperBound_, uint256 lowerBound_);
-
-    function expectedMintAmountToLtv(
-        uint256 id_,
-        uint256 newCollateralAmount_,
-        uint256 ltv_,
-        uint256 newShareAmount_
-    ) external view returns (uint256 newStableAmount_);
-
-    function expectedRedeemAmountToLtv(
-        uint256 id_,
-        uint256 collectedStableAmount_,
-        uint256 ltv_
-    )
-        external
-        view
-        returns (uint256 emittedCollateralAmount_, uint256 emittedShareAmount_);
 
     function exchangedShareAmountFromCollateralToLtv(
         uint256 id_,
