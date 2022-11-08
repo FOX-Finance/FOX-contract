@@ -312,6 +312,7 @@ $ dotenv -e .env.test -- npx hardhat run scripts/mint.js --network localhost
 - [ ] `feeTo` -> share fees to FOXS holders
 - [ ] PSM
 - [ ] "Swap is more cheaper" message
+- [ ] Use ethers.BigNumber instead of BigInt
 
 # Future Work
 - [ ] Frontend advanced page

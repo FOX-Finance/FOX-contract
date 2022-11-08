@@ -157,15 +157,17 @@ async function main() {
     console.log("\n<Get current CDP info>");
     await getCdp(cid);
 
+    const collateralAmount = BigInt(100 * (10 ** 18));
+    const ltv = BigInt(50 * 100);
+
+    // 1. Recoll from owner
+    console.log("\n<Get LTV range>");
+    await getLtvRange(
+        BigInt(0),
+        BigInt(0.1 * (10 ** 18)),
+    );
+
     process.exit(1);
-
-
-    // // 1. Recoll from owner
-    // console.log("\n<Get LTV range>");
-    // await getLtvRange(
-    //     BigInt(0),
-    //     BigInt(0.1 * (10 ** 18)),
-    // );
 
     // console.log("\n<Recoll: more debt by owner>");
     // await recollBorrowDebt(

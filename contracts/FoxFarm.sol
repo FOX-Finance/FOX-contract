@@ -145,14 +145,12 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
                     _DENOMINATOR) /
                     (_trustLevel *
                         (_cdp.collateral + collateralAmount_) *
-                        _collateralPrice) +
-                    1
+                        _collateralPrice)
             );
 
             lowerBound_ =
                 (_cdp.debt * _DENOMINATOR * _DENOMINATOR) /
-                ((_cdp.collateral + collateralAmount_) * _collateralPrice) -
-                1;
+                ((_cdp.collateral + collateralAmount_) * _collateralPrice);
         } else {
             upperBound_ = min(
                 maxLTV,
@@ -160,11 +158,10 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
                     _stableToken.sharePrice() *
                     (_DENOMINATOR - _trustLevel) *
                     _DENOMINATOR) /
-                    (_trustLevel * (collateralAmount_) * _collateralPrice) +
-                    1
+                    (_trustLevel * (collateralAmount_) * _collateralPrice)
             );
 
-            // lowerBound_ = 1 - 1;
+            lowerBound_ = 1;
         }
     }
 
@@ -298,7 +295,6 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
     }
 
     // TODO: Zapping in case of out of range.
-    /// @dev LTV range has no `equal` range (only less than and more than) unlike amount-range.
     function ltvRangeWhenRedeem(uint256 id_, uint256 stableAmount_)
         public
         view
@@ -307,15 +303,14 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
     {
         CollateralizedDebtPosition memory _cdp = cdps[id_];
 
-        upperBound_ = currentLTV(id_) + 1;
+        upperBound_ = currentLTV(id_);
 
         uint256 _debtAmount = _stableToken
             .requiredDebtAmountFromStableWithBurnFee(stableAmount_);
 
         lowerBound_ =
             ((_cdp.debt - _debtAmount) * _DENOMINATOR * _DENOMINATOR) /
-            (_cdp.collateral * _collateralPrice) -
-            1;
+            (_cdp.collateral * _collateralPrice);
     }
 
     function stableAmountRangeWhenRedeem(address account_, uint256 id_)
@@ -396,19 +391,13 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
     {
         CollateralizedDebtPosition memory _cdp = cdps[id_];
 
-        uint256 _deptAmount = borrowDebtAmountToLTV(
-            id_,
-            maxLTV,
-            collateralAmount_
+        uint256 _deptAmount = min(
+            borrowDebtAmountToLTV(id_, maxLTV, collateralAmount_),
+            _stableToken.shortfallRecollateralizeAmount()
         );
-        uint256 _shortfallAmount = _stableToken
-            .shortfallRecollateralizeAmount();
-        _shortfallAmount = _shortfallAmount >= _deptAmount
-            ? _deptAmount
-            : _shortfallAmount;
 
         upperBound_ =
-            ((_cdp.debt + _cdp.fee + _shortfallAmount) *
+            ((_cdp.debt + _cdp.fee + _deptAmount) *
                 _DENOMINATOR *
                 _DENOMINATOR) /
             (_cdp.collateral * _collateralPrice);
