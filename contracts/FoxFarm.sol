@@ -124,7 +124,6 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
     }
 
     // TODO: Zapping in case of out of range. (ex. FOXS -> SIN|WETH)
-    /// @dev LTV range has no `equal` range (only less than and more than) unlike amount-range.
     function ltvRangeWhenMint(
         uint256 id_, // default type(uint256).max
         uint256 collateralAmount_,
@@ -382,7 +381,6 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
     }
 
     /// @dev always be same or increasing LTV.
-    /// @dev LTV range has no `equal` range (only less than and more than) unlike amount-range.
     function ltvRangeWhenRecollateralize(uint256 id_, uint256 collateralAmount_)
         public
         view
@@ -400,28 +398,40 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
             ((_cdp.debt + _cdp.fee + _deptAmount) *
                 _DENOMINATOR *
                 _DENOMINATOR) /
-            (_cdp.collateral * _collateralPrice);
+            ((_cdp.collateral + collateralAmount_) * _collateralPrice);
 
-        lowerBound_ = currentLTV(id_);
+        lowerBound_ =
+            ((_cdp.debt + _cdp.fee) * _DENOMINATOR * _DENOMINATOR) /
+            ((_cdp.collateral + collateralAmount_) * _collateralPrice);
     }
 
     /// @dev 0 to shorfall.
-    function collateralAmountRangeWhenRecollateralize(uint256 id_, uint256 ltv_)
+    function collateralAmountRangeWhenRecollateralize(
+        address account_,
+        uint256 id_,
+        uint256 ltv_
+    )
         public
         view
         idRangeCheck(id_)
         returns (uint256 upperBound_, uint256 lowerBound_)
     {
-        upperBound_ =
-            (_stableToken.shortfallRecollateralizeAmount() *
+        CollateralizedDebtPosition memory _cdp = cdps[id_];
+
+        upperBound_ = min(
+            _collateralToken.balanceOf(account_),
+            (_DENOMINATOR *
                 _DENOMINATOR *
-                _DENOMINATOR) /
-            (ltv_ * _collateralPrice);
+                (_stableToken.shortfallRecollateralizeAmount() +
+                    (_cdp.debt + _cdp.fee))) /
+                (_collateralPrice * ltv_) -
+                _cdp.collateral
+        );
 
         // lowerBound_ = 0;
     }
 
-    /// @dev for recoll
+    /// @dev No consideration about shortfall.
     function exchangedShareAmountFromCollateralToLtv(
         uint256 id_,
         uint256 collateralAmount_,
@@ -433,6 +443,33 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
     }
 
     //============ View Functions (Buyback) ============//
+
+    function defaultValuesBuyback(address account_, uint256 id_)
+        external
+        view
+        returns (
+            uint256 shareAmount_,
+            uint256 collateralAmount_,
+            uint256 ltv_
+        )
+    {
+        uint256 _hodlShareAmount = _shareToken.balanceOf(account_);
+
+        ltv_ = currentLTV(id_);
+
+        shareAmount_ = min(
+            _stableToken.exchangedShareAmountFromDebt(
+                _stableToken.surplusBuybackAmount()
+            ),
+            _hodlShareAmount
+        );
+
+        collateralAmount_ = exchangedCollateralAmountFromShareToLtv(
+            id_,
+            shareAmount_,
+            ltv_
+        );
+    }
 
     /// @dev always be same or decreasing LTV.
     function ltvRangeWhenBuyback(uint256 id_, uint256 shareAmount_)
@@ -554,11 +591,12 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         emit Close(account_, id_);
     }
 
-    //============ FOX Operations ============//
+    //============ FOX Operations (Recoll) ============//
 
-    function recollateralizeBorrowDebtToLtv(
+    function recollateralizeBorrowDebtDepositCollateralToLtv(
         address account_,
         uint256 id_,
+        uint256 collateralAmount_,
         uint256 ltv_
     )
         external
@@ -567,6 +605,8 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         onlyCdpApprovedOrOwner(_msgSender(), id_)
         returns (uint256 shareAmount_, uint256 bonusAmount_)
     {
+        _deposit(_msgSender(), id_, collateralAmount_);
+
         uint256 debtAmount_ = borrowDebtAmountToLTV(id_, ltv_, 0);
 
         super._borrow(address(this), id_, debtAmount_);
@@ -577,30 +617,7 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         );
     }
 
-    function recollateralizeDepositCollateral(
-        address account_,
-        uint256 id_,
-        uint256 amount_ // collateralAmount
-    )
-        external
-        updateIdFirst(id_)
-        whenNotPaused
-        onlyCdpApprovedOrOwner(_msgSender(), id_)
-        returns (uint256 shareAmount_, uint256 bonusAmount_)
-    {
-        uint256 _ltv = currentLTV(id_);
-
-        _deposit(_msgSender(), id_, amount_);
-
-        uint256 debtAmount_ = borrowDebtAmountToLTV(id_, _ltv, 0);
-
-        super._borrow(address(this), id_, debtAmount_);
-
-        (shareAmount_, bonusAmount_) = _stableToken.recollateralize(
-            account_,
-            debtAmount_
-        );
-    }
+    //============ FOX Operations (Buyback) ============//
 
     function buybackRepayDebt(uint256 id_, uint256 shareAmount_)
         external

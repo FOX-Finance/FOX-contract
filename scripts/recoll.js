@@ -1,5 +1,21 @@
 const { signer, contract, set, attach } = require('./set');
 
+async function balances() {
+    let balance;
+
+    process.stdout.write("[WETH] Check balance");
+    balance = await contract.weth.balanceOf(signer.user.address);
+    console.log(" - complete:\t", balance / (10 ** 18));
+
+    process.stdout.write("[FOXS] Check balance");
+    balance = await contract.foxs.balanceOf(signer.user.address);
+    console.log(" - complete:\t", balance / (10 ** 18));
+
+    process.stdout.write("[FOX] Check balance");
+    balance = await contract.fox.balanceOf(signer.user.address);
+    console.log(" - complete:\t\t", balance / (10 ** 18));
+}
+
 async function getTrustLevel() {
     process.stdout.write("[Fox] Get trust level");
     const trustLevel = await contract.fox.trustLevel();
@@ -86,39 +102,28 @@ async function getLtvRange(id, collateralAmount) {
     console.log("\tlowerBound:\t", res.lowerBound_ / 100, "%");
 }
 
-async function getCollateralAmountRangeWhenRecoll(id) {
+async function getCollateralAmountRangeWhenRecoll(account, id, ltv) {
     process.stdout.write("[FoxFarm] Get collateralAmountRangeWhenRecoll");
-    const res = await contract.foxFarm.collateralAmountRangeWhenRecollateralize(id);
+    const res = await contract.foxFarm.collateralAmountRangeWhenRecollateralize(account, id, ltv);
     console.log(" - complete:");
     console.log("\tupperBound:\t", res.upperBound_ / (10 ** 18));
     console.log("\tlowerBound:\t", res.lowerBound_ / (10 ** 18));
 }
 
-async function recollBorrowDebt(account, id, ltv) {
-    let txRes;
-
-    process.stdout.write("[FoxFarm] Recoll");
-    txRes = await contract.foxFarm.connect(signer.user).recollateralizeBorrowDebtToLtv(
-        account, id, ltv
-    );
-    await txRes.wait();
-    console.log(" - complete");
-}
-
 async function getRecollAmount(id, collateralAmount, ltv) {
-    process.stdout.write("[FoxFarm] Get collateral amount");
+    process.stdout.write("[FoxFarm] Get share amount");
     const shareAmount = await contract.foxFarm.exchangedShareAmountFromCollateralToLtv(id, collateralAmount, ltv);
     console.log(" - complete:\t", shareAmount / (10 ** 18));
 
     return shareAmount;
 }
 
-async function recollDepositCollateral(account, id, collateralAmount) {
+async function recoll(account, id, collateralAmount, ltv) {
     let txRes;
 
     process.stdout.write("[FoxFarm] Recoll");
-    txRes = await contract.foxFarm.connect(signer.user).recollateralizeDepositCollateral(
-        account, id, collateralAmount
+    txRes = await contract.foxFarm.connect(signer.user).recollateralizeBorrowDebtDepositCollateralToLtv(
+        account, id, collateralAmount, ltv
     );
     await txRes.wait();
     console.log(" - complete");
@@ -157,84 +162,55 @@ async function main() {
     console.log("\n<Get current CDP info>");
     await getCdp(cid);
 
-    const collateralAmount = BigInt(100 * (10 ** 18));
-    const ltv = BigInt(50 * 100);
+    const collateralAmount = BigInt(1000 * (10 ** 18));
+    const ltv = BigInt(30 * 100);
 
-    // 1. Recoll from owner
     console.log("\n<Get LTV range>");
     await getLtvRange(
-        BigInt(0),
-        BigInt(0.1 * (10 ** 18)),
+        cid,
+        collateralAmount,
     );
 
-    process.exit(1);
-
-    // console.log("\n<Recoll: more debt by owner>");
-    // await recollBorrowDebt(
-    //     signer.user.address,
-    //     BigInt(0),
-    //     BigInt(44 * 100)
-    // );
-
-    // console.log("\n<After: Get current LTV>");
-    // ltv = await getLtv(
-    //     BigInt(0)
-    // );
-
-    // console.log("\n<After: Get current CDP info>");
-    // await getCdp(BigInt(0));
-
-    // TODO: case 1
-    // console.log("\n<Get recoll amount w/ different LTV>");
-    // await getRecollAmount(
-    //     BigInt(0),
-    //     BigInt(0.3 * (10 ** 18)),
-    //     BigInt(44 * 100)
-    // );
-
-    // TODO: fix
-    // TODO: because of fee, only owner?
-    // 2. Recoll from the other
-    console.log("\nGet collateral amount range");
+    console.log("\n<Get collateral amount range>");
     await getCollateralAmountRangeWhenRecoll(
-        BigInt(0)
-    );
-
-    console.log("\n<Before: Get current LTV>");
-    ltv = await getLtv(
-        BigInt(0)
-    );
-
-    console.log("\n<Before: Get current CDP info>");
-    await getCdp(BigInt(0));
-
-    console.log("\n<Get LTV range>");
-    await getLtvRange(
-        BigInt(0),
-        BigInt(0.1 * (10 ** 18)),
-    );
-
-    console.log("\n<Get recoll amount>");
-    await getRecollAmount(
-        BigInt(0),
-        BigInt(0.3 * (10 ** 18)),
+        signer.user.address,
+        cid,
         ltv
     );
 
-    console.log("\n<Recoll: deposit collateral>");
-    await recollDepositCollateral(
+    // Recoll
+    console.log("\n<Expected recoll amount>");
+    await getRecollAmount(
+        cid,
+        collateralAmount,
+        ltv
+    );
+
+    console.log("\n<Before: Get current LTV>");
+    await getLtv(cid);
+
+    console.log("\n<Before: Get current CDP info>");
+    await getCdp(cid);
+
+    console.log("\n<Before: Balances>");
+    await balances();
+
+    console.log("\n<Recoll: more debt by owner>");
+    await recoll(
         signer.user.address,
-        BigInt(0),
-        BigInt(0.3 * (10 ** 18))
+        cid,
+        collateralAmount,
+        ltv
     );
 
     console.log("\n<After: Get current LTV>");
-    await getLtv(
-        BigInt(0)
-    );
+    await getLtv(cid);
 
     console.log("\n<After: Get current CDP info>");
-    await getCdp(BigInt(0));
+    await getCdp(cid);
+
+    console.log("\n<After: Balances>");
+    await balances();
 }
 
 // run

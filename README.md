@@ -307,7 +307,8 @@ $ dotenv -e .env.test -- npx hardhat run scripts/mint.js --network localhost
 - [x] Check additional conditions: total ratio, cdp ratio
 - [x] Oracle feeder
 - [x] WARNING or Restriction when protocol trust touches 100% collateral backing level
-- [ ] update first (modifier)
+- [x] CDP update first (modifier)
+- [ ] FoxFarm Gateway for view functions
 - [ ] Refactoring interfaces
 - [ ] `feeTo` -> share fees to FOXS holders
 - [ ] PSM

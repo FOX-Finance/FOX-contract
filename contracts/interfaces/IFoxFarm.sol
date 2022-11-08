@@ -103,18 +103,28 @@ interface IFoxFarm is ICDP {
         view
         returns (uint256 upperBound_, uint256 lowerBound_);
 
-    function collateralAmountRangeWhenRecollateralize(uint256 id_, uint256 ltv_)
-        external
-        view
-        returns (uint256 upperBound_, uint256 lowerBound_);
-
-    function exchangedCollateralAmountFromShareToLtv(
+    function collateralAmountRangeWhenRecollateralize(
+        address account_,
         uint256 id_,
-        uint256 shareAmount_,
         uint256 ltv_
-    ) external view returns (uint256 collateralAmount_);
+    ) external view returns (uint256 upperBound_, uint256 lowerBound_);
+
+    function exchangedShareAmountFromCollateralToLtv(
+        uint256 id_,
+        uint256 collateralAmount_,
+        uint256 ltv_
+    ) external view returns (uint256 shareAmount_);
 
     //============ View Functions (Buyback) ============//
+
+    function defaultValuesBuyback(address account_, uint256 id_)
+        external
+        view
+        returns (
+            uint256 shareAmount_,
+            uint256 collateralAmount_,
+            uint256 ltv_
+        );
 
     function ltvRangeWhenBuyback(uint256 id_, uint256 shareAmount_)
         external
@@ -126,24 +136,19 @@ interface IFoxFarm is ICDP {
         view
         returns (uint256 upperBound_, uint256 lowerBound_);
 
-    function exchangedShareAmountFromCollateralToLtv(
+    function exchangedCollateralAmountFromShareToLtv(
         uint256 id_,
-        uint256 collateralAmount_,
+        uint256 shareAmount_,
         uint256 ltv_
-    ) external view returns (uint256 shareAmount_);
+    ) external view returns (uint256 collateralAmount_);
 
     //============ FOX Operations ============//
 
-    function recollateralizeBorrowDebtToLtv(
+    function recollateralizeBorrowDebtDepositCollateralToLtv(
         address account_,
         uint256 id_,
+        uint256 collateralAmount_,
         uint256 ltv_
-    ) external returns (uint256 shareAmount_, uint256 bonusAmount_);
-
-    function recollateralizeDepositCollateral(
-        address account_,
-        uint256 id_,
-        uint256 amount_
     ) external returns (uint256 shareAmount_, uint256 bonusAmount_);
 
     function buybackRepayDebt(uint256 id_, uint256 amount_)
