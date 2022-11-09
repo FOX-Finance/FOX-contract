@@ -75,7 +75,7 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         _debtToken = IERC20(debtToken_);
         _shareToken = IERC20(shareToken_);
 
-        step = _ULTRA_STEP; // TODO: automatically adjusting
+        step = _ULTRA_STEP; // TODO: automatically adjusting (curve)
 
         mintFeeRatio = mintFeeRatio_;
         burnFeeRatio = burnFeeRatio_;

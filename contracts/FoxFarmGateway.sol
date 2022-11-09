@@ -3,6 +3,7 @@
 pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 import "./interfaces/IFOX.sol";
 import "./interfaces/IFoxFarm.sol";
@@ -425,21 +426,43 @@ contract FoxFarmGateway is IFoxFarmGateway {
     {
         uint256 _hodlShareAmount = _shareToken.balanceOf(account_);
 
-        ltv_ = _foxFarm.currentLTV(id_);
-
-        shareAmount_ = min(
-            _stableToken.exchangedShareAmountFromDebt(
-                _stableToken.surplusBuybackAmount()
-            ),
-            _hodlShareAmount
+        IFoxFarm.CollateralizedDebtPosition memory _cdp = _foxFarm.cdp(id_);
+        shareAmount_ = _stableToken.exchangedShareAmountFromDebt(
+            min(
+                _stableToken.surplusBuybackAmount(),
+                min(
+                    _stableToken.exchangedDebtAmountFromShare(_hodlShareAmount),
+                    _cdp.debt + _cdp.fee
+                )
+            )
         );
 
-        collateralAmount_ = exchangedCollateralAmountFromShareToLtv(
-            id_,
-            shareAmount_,
-            ltv_
-        );
+        address owner = IERC721(address(_foxFarm)).ownerOf(id_);
+        if (
+            account_ == owner ||
+            IERC721(address(_foxFarm)).isApprovedForAll(owner, account_) ||
+            IERC721(address(_foxFarm)).getApproved(id_) == account_
+        ) {
+            ltv_ = _foxFarm.currentLTV(id_);
+
+            collateralAmount_ = exchangedCollateralAmountFromShareToLtv(
+                id_,
+                shareAmount_,
+                ltv_
+            );
+        } else {
+            ltv_ = _foxFarm.calculatedLtv(
+                _cdp.collateral,
+                _cdp.debt +
+                    _cdp.fee -
+                    _stableToken.exchangedDebtAmountFromShare(shareAmount_)
+            );
+
+            // collateralAmount_ = 0;
+        }
     }
+
+    // TODO (WIP)
 
     /// @dev always be same or decreasing LTV.
     function ltvRangeWhenBuyback(uint256 id_, uint256 shareAmount_)

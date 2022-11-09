@@ -94,6 +94,15 @@ async function getLtv(id) {
     return ltv;
 }
 
+async function getDefaultValues(account, id) {
+    process.stdout.write("[Gateway] Get default values");
+    const res = await contract.gateway.defaultValuesBuyback(account, id);
+    console.log(" - complete:");
+    console.log("\tshare:\t\t", res.shareAmount_ / (10 ** 18));
+    console.log("\tcollateral:\t", res.collateralAmount_ / (10 ** 18));
+    console.log("\tltv:\t\t", res.ltv_ / 100, "%");
+}
+
 async function getBuybackAmount(id, shareAmount, ltv) {
     process.stdout.write("[Gateway] Get collateral amount");
     const collateralAmount = await contract.gateway.exchangedCollateralAmountFromShareToLtv(id, shareAmount, ltv);
@@ -111,8 +120,8 @@ async function getLtvRange(id, stableAmount) {
 }
 
 async function getCdp(id) {
-    process.stdout.write("[Gateway] Get current CDP info");
-    const cdp = await contract.gateway.cdps(id);
+    process.stdout.write("[FoxFarm] Get current CDP info");
+    const cdp = await contract.foxFarm.cdp(id);
     console.log(" - complete:");
     console.log("\tcollateral:\t", cdp.collateral / (10 ** 18));
     console.log("\tdebt:\t\t", cdp.debt / (10 ** 18));
@@ -168,17 +177,31 @@ async function main() {
 
     const cid = BigInt(0);
 
+    console.log("\nGet default values from owner");
+    await getDefaultValues(
+        signer.user.address,
+        cid
+    );
+
+    console.log("\nGet default values from other");
+    await getDefaultValues(
+        signer.user2.address,
+        cid
+    );
+
     console.log("\n<Get trust level>");
     await getTrustLevel();
 
     console.log("\n<Get surplus buyback amount>");
     await getSurplusBuybackamount();
 
-    console.log("\n<Before: Get current LTV>");
+    console.log("\n<Get current LTV>");
     await getLtv(cid);
 
-    console.log("\n<Before: Get current CDP info>");
+    console.log("\n<Get current CDP info>");
     await getCdp(cid);
+
+    process.exit(1);
 
     // 1. Buyback from other user
     console.log("\n<Get LTV range>");
