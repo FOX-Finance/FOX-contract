@@ -57,8 +57,8 @@ async function balances() {
 }
 
 async function getDefaultValues(account, id) {
-    process.stdout.write("[FoxFarm] Get default values");
-    const res = await contract.foxFarm.defaultValuesMint(account, id);
+    process.stdout.write("[Gateway] Get default values");
+    const res = await contract.gateway.defaultValuesMint(account, id);
     console.log(" - complete:");
     console.log("\tcollateral:\t", res.collateralAmount_ / (10 ** 18));
     console.log("\tltv:\t\t", res.ltv_ / 100, "%");
@@ -67,32 +67,32 @@ async function getDefaultValues(account, id) {
 }
 
 async function getLtvRange(id, collateralAmount, shareAmount) {
-    process.stdout.write("[FoxFarm] Get LTV range");
-    const res = await contract.foxFarm.ltvRangeWhenMint(id, collateralAmount, shareAmount);
+    process.stdout.write("[Gateway] Get LTV range");
+    const res = await contract.gateway.ltvRangeWhenMint(id, collateralAmount, shareAmount);
     console.log(" - complete:");
     console.log("\tupperBound:\t", res.upperBound_ / 100, "%");
     console.log("\tlowerBound:\t", res.lowerBound_ / 100, "%");
 }
 
 async function getCollateralAmountRange(account, id, ltv, shareAmount) {
-    process.stdout.write("[FoxFarm] Get WETH range");
-    const res = await contract.foxFarm.collateralAmountRangeWhenMint(account, id, ltv, shareAmount);
+    process.stdout.write("[Gateway] Get WETH range");
+    const res = await contract.gateway.collateralAmountRangeWhenMint(account, id, ltv, shareAmount);
     console.log(" - complete:");
     console.log("\tupperBound:\t", res.upperBound_ / (10 ** 18));
     console.log("\tlowerBound:\t", res.lowerBound_ / (10 ** 18));
 }
 
 async function getShareAmountRange(account, id, collateralAmount, ltv) {
-    process.stdout.write("[FoxFarm] Get FOXS range");
-    const res = await contract.foxFarm.shareAmountRangeWhenMint(account, id, collateralAmount, ltv);
+    process.stdout.write("[Gateway] Get FOXS range");
+    const res = await contract.gateway.shareAmountRangeWhenMint(account, id, collateralAmount, ltv);
     console.log(" - complete:");
     console.log("\tupperBound:\t", res.upperBound_ / (10 ** 18));
     console.log("\tlowerBound:\t", res.lowerBound_ / (10 ** 18));
 }
 
 async function getRequiredFoxsAmount(collateralAmount, ltv) {
-    process.stdout.write("[FoxFarm] Get required FOXS");
-    const shareAmount = await contract.foxFarm.requiredShareAmountFromCollateralToLtv(
+    process.stdout.write("[Gateway] Get required FOXS");
+    const shareAmount = await contract.gateway.requiredShareAmountFromCollateralToLtv(
         ethers.constants.MaxUint256,
         collateralAmount,
         ltv
@@ -103,8 +103,8 @@ async function getRequiredFoxsAmount(collateralAmount, ltv) {
 }
 
 async function getRequiredWethAmount(shareAmount, ltv) {
-    process.stdout.write("[FoxFarm] Get required WETH");
-    const collateralAmount = await contract.foxFarm.requiredCollateralAmountFromShareToLtv(
+    process.stdout.write("[Gateway] Get required WETH");
+    const collateralAmount = await contract.gateway.requiredCollateralAmountFromShareToLtv(
         ethers.constants.MaxUint256,
         shareAmount,
         ltv
@@ -115,8 +115,8 @@ async function getRequiredWethAmount(shareAmount, ltv) {
 }
 
 async function getExpectedFoxAmount(collateralAmount, shareAmount, ltv) {
-    process.stdout.write("[FoxFarm] Get expected FOX");
-    const stableAmount = await contract.foxFarm.expectedMintAmountToLtv(
+    process.stdout.write("[Gateway] Get expected FOX");
+    const stableAmount = await contract.gateway.expectedMintAmountToLtv(
         ethers.constants.MaxUint256,
         collateralAmount,
         ltv,

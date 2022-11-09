@@ -58,6 +58,14 @@ async function deploy() {
     await contract.foxFarm.deployed();
     console.log(":\t\t", contract.foxFarm.address);
 
+    process.stdout.write("Deploy Gateway");
+    const Gateway = await ethers.getContractFactory("FoxFarmGateway", signer.owner);
+    contract.gateway = await Gateway.deploy(
+        contract.weth.address, contract.foxs.address, contract.fox.address, contract.foxFarm.address
+    );
+    await contract.gateway.deployed();
+    console.log(":\t\t", contract.gateway.address);
+
     fs.writeFileSync("address.json", JSON.stringify({
         "Owner": signer.owner.address,
         "Bot": signer.bot.address,
@@ -69,7 +77,8 @@ async function deploy() {
         "FOXS": contract.foxs.address,
         "FOX": contract.fox.address,
         "Coupon": contract.coupon.address,
-        "FoxFarm": contract.foxFarm.address
+        "FoxFarm": contract.foxFarm.address,
+        "Gateway": contract.gateway.address
     }, null, 4));
 }
 

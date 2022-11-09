@@ -38,7 +38,7 @@ async function balances() {
 
 async function getCdp(id) {
     process.stdout.write("[FoxFarm] Get current CDP info");
-    const cdp = await contract.foxFarm.cdps(id);
+    const cdp = await contract.foxFarm.cdp(id);
     console.log(" - complete:");
     console.log("\tcollateral:\t", cdp.collateral / (10 ** 18));
     console.log("\tdebt:\t\t", cdp.debt / (10 ** 18));
@@ -54,8 +54,8 @@ async function getLtv(id) {
 }
 
 async function getDefaultValues(account, id) {
-    process.stdout.write("[FoxFarm] Get default values");
-    const res = await contract.foxFarm.defaultValueRedeem(account, id);
+    process.stdout.write("[Gateway] Get default values");
+    const res = await contract.gateway.defaultValueRedeem(account, id);
     console.log(" - complete:");
     console.log("\tstable:\t\t", res.stableAmount_ / (10 ** 18));
     console.log("\tcollateral:\t", res.collateralAmount_ / (10 ** 18));
@@ -64,24 +64,24 @@ async function getDefaultValues(account, id) {
 }
 
 async function getLtvRange(id, stableAmount) {
-    process.stdout.write("[FoxFarm] Get LTV range");
-    const res = await contract.foxFarm.ltvRangeWhenRedeem(id, stableAmount);
+    process.stdout.write("[Gateway] Get LTV range");
+    const res = await contract.gateway.ltvRangeWhenRedeem(id, stableAmount);
     console.log(" - complete:");
     console.log("\tupperBound:\t", res.upperBound_ / 100, "%");
     console.log("\tlowerBound:\t", res.lowerBound_ / 100, "%");
 }
 
 async function getFoxRange(account, id) {
-    process.stdout.write("[FOX] Get FOX range");
-    const res = await contract.foxFarm.stableAmountRangeWhenRedeem(account, id);
+    process.stdout.write("[Gateway] Get FOX range");
+    const res = await contract.gateway.stableAmountRangeWhenRedeem(account, id);
     console.log(" - complete:");
     console.log("\tupperBound:\t", res.upperBound_ / (10 ** 18));
     console.log("\tlowerBound:\t", res.lowerBound_ / (10 ** 18));
 }
 
 async function getExpectedRedeemAmount(id, stableAmount, ltv) {
-    process.stdout.write("[FoxFarm] Get expected redeem amount");
-    const res = await contract.foxFarm.expectedRedeemAmountToLtv(
+    process.stdout.write("[Gateway] Get expected redeem amount");
+    const res = await contract.gateway.expectedRedeemAmountToLtv(
         id,
         stableAmount,
         ltv

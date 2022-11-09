@@ -206,10 +206,9 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         onlyCdpApprovedOrOwner(_msgSender(), id_)
         returns (uint256 shareAmount_, uint256 bonusAmount_)
     {
-        CollateralizedDebtPosition memory _cdp = _cdps[id_];
-
         _deposit(_msgSender(), id_, collateralAmount_);
 
+        CollateralizedDebtPosition memory _cdp = _cdps[id_];
         uint256 debtAmount_ = debtAmountFromCollateralToLtv(
             _cdp.collateral,
             ltv_

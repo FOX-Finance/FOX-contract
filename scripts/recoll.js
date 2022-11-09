@@ -72,7 +72,7 @@ async function getLtv(id) {
 
 async function getCdp(id) {
     process.stdout.write("[FoxFarm] Get current CDP info");
-    const cdp = await contract.foxFarm.cdps(id);
+    const cdp = await contract.foxFarm.cdp(id);
     console.log(" - complete:");
     console.log("\tcollateral:\t", cdp.collateral / (10 ** 18));
     console.log("\tdebt:\t\t", cdp.debt / (10 ** 18));
@@ -80,8 +80,8 @@ async function getCdp(id) {
 }
 
 async function getDefaultValues(account, id) {
-    process.stdout.write("[FoxFarm] Get default values");
-    const res = await contract.foxFarm.defaultValuesRecollateralize(account, id);
+    process.stdout.write("[Gateway] Get default values");
+    const res = await contract.gateway.defaultValuesRecollateralize(account, id);
     console.log(" - complete:");
     console.log("\tcollateral:\t", res.collateralAmount_ / (10 ** 18));
     console.log("\tltv:\t\t", res.ltv_ / 100, "%");
@@ -95,24 +95,24 @@ async function getShortfallRecollateralizeAmount() {
 }
 
 async function getLtvRange(id, collateralAmount) {
-    process.stdout.write("[FoxFarm] Get LTV range");
-    const res = await contract.foxFarm.ltvRangeWhenRecollateralize(id, collateralAmount);
+    process.stdout.write("[Gateway] Get LTV range");
+    const res = await contract.gateway.ltvRangeWhenRecollateralize(id, collateralAmount);
     console.log(" - complete:");
     console.log("\tupperBound:\t", res.upperBound_ / 100, "%");
     console.log("\tlowerBound:\t", res.lowerBound_ / 100, "%");
 }
 
 async function getCollateralAmountRangeWhenRecoll(account, id, ltv) {
-    process.stdout.write("[FoxFarm] Get collateralAmountRangeWhenRecoll");
-    const res = await contract.foxFarm.collateralAmountRangeWhenRecollateralize(account, id, ltv);
+    process.stdout.write("[Gateway] Get collateralAmountRangeWhenRecoll");
+    const res = await contract.gateway.collateralAmountRangeWhenRecollateralize(account, id, ltv);
     console.log(" - complete:");
     console.log("\tupperBound:\t", res.upperBound_ / (10 ** 18));
     console.log("\tlowerBound:\t", res.lowerBound_ / (10 ** 18));
 }
 
 async function getRecollAmount(id, collateralAmount, ltv) {
-    process.stdout.write("[FoxFarm] Get share amount");
-    const shareAmount = await contract.foxFarm.exchangedShareAmountFromCollateralToLtv(id, collateralAmount, ltv);
+    process.stdout.write("[Gateway] Get share amount");
+    const shareAmount = await contract.gateway.exchangedShareAmountFromCollateralToLtv(id, collateralAmount, ltv);
     console.log(" - complete:\t", shareAmount / (10 ** 18));
 
     return shareAmount;
@@ -122,7 +122,7 @@ async function recoll(account, id, collateralAmount, ltv) {
     let txRes;
 
     process.stdout.write("[FoxFarm] Recoll");
-    txRes = await contract.foxFarm.connect(signer.user).recollateralizeBorrowDebtDepositCollateralToLtv(
+    txRes = await contract.foxFarm.connect(signer.user).recollateralize(
         account, id, collateralAmount, ltv
     );
     await txRes.wait();

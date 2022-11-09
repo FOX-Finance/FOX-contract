@@ -308,12 +308,12 @@ $ dotenv -e .env.test -- npx hardhat run scripts/mint.js --network localhost
 - [x] Oracle feeder
 - [x] WARNING or Restriction when protocol trust touches 100% collateral backing level
 - [x] CDP update first (modifier)
-- [ ] FoxFarm Gateway for view functions
+- [x] FoxFarm Gateway for view functions
 - [ ] Refactoring interfaces
 - [ ] `feeTo` -> share fees to FOXS holders
 - [ ] PSM
 - [ ] "Swap is more cheaper" message
-- [ ] Use ethers.BigNumber instead of BigInt
+- [x] Use ethers.BigNumber instead of BigInt
 
 # Future Work
 - [ ] Frontend advanced page

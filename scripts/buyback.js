@@ -95,24 +95,24 @@ async function getLtv(id) {
 }
 
 async function getBuybackAmount(id, shareAmount, ltv) {
-    process.stdout.write("[FoxFarm] Get collateral amount");
-    const collateralAmount = await contract.foxFarm.exchangedCollateralAmountFromShareToLtv(id, shareAmount, ltv);
+    process.stdout.write("[Gateway] Get collateral amount");
+    const collateralAmount = await contract.gateway.exchangedCollateralAmountFromShareToLtv(id, shareAmount, ltv);
     console.log(" - complete:\t", collateralAmount / (10 ** 18));
 
     return collateralAmount;
 }
 
 async function getLtvRange(id, stableAmount) {
-    process.stdout.write("[FoxFarm] Get LTV range");
-    const res = await contract.foxFarm.ltvRangeWhenBuyback(id, stableAmount);
+    process.stdout.write("[Gateway] Get LTV range");
+    const res = await contract.gateway.ltvRangeWhenBuyback(id, stableAmount);
     console.log(" - complete:");
     console.log("\tupperBound:\t", res.upperBound_ / 100, "%");
     console.log("\tlowerBound:\t", res.lowerBound_ / 100, "%");
 }
 
 async function getCdp(id) {
-    process.stdout.write("[FoxFarm] Get current CDP info");
-    const cdp = await contract.foxFarm.cdps(id);
+    process.stdout.write("[Gateway] Get current CDP info");
+    const cdp = await contract.gateway.cdps(id);
     console.log(" - complete:");
     console.log("\tcollateral:\t", cdp.collateral / (10 ** 18));
     console.log("\tdebt:\t\t", cdp.debt / (10 ** 18));
