@@ -12,6 +12,26 @@ interface ICDP {
         uint256 latestUpdate;
     }
 
+    function collateralToken() external view returns (address);
+
+    function debtToken() external view returns (address);
+
+    function collateralPrice() external view returns (uint256);
+
+    function minimumCollateral() external view returns (uint256);
+
+    function maxLTV() external view returns (uint256);
+
+    function cap() external view returns (uint256);
+
+    function id() external view returns (uint256);
+
+    function totalCollateral() external view returns (uint256);
+
+    function totalDebt() external view returns (uint256);
+
+    function totalFee() external view returns (uint256);
+
     //============ Events ============//
 
     event Open(address indexed account_, uint256 indexed id_);
@@ -68,7 +88,24 @@ interface ICDP {
         uint256 confidence
     ) external;
 
+    //============ Health Functions ============//
+
+    function isSafe(uint256 id_) external view returns (bool);
+
+    function globalLTV() external view returns (uint256 ltv_);
+
+    function currentLTV(uint256 id_) external view returns (uint256 ltv_);
+
+    function healthFactor(uint256 id_) external view returns (uint256 health);
+
+    function globalHealthFactor() external view returns (uint256 health);
+
     //============ View Functions ============//
+
+    function cdp(uint256 id_)
+        external
+        view
+        returns (CollateralizedDebtPosition memory);
 
     function cdpInfo(uint256 id_)
         external
@@ -79,31 +116,22 @@ interface ICDP {
             uint256 fee_
         );
 
-    function maxLTV() external view returns (uint256);
+    function calculatedLtv(uint256 collateralAmount_, uint256 debtAmount_)
+        external
+        view
+        returns (uint256 ltv_);
 
-    function isSafe(uint256 id_) external view returns (bool);
+    //============ View Functions (CDP) ============//
 
-    function currentLTV(uint256 id_) external view returns (uint256 ltv);
-
-    function globalLTV() external view returns (uint256 ltv);
-
-    function healthFactor(uint256 id_) external view returns (uint256 health);
-
-    function globalHealthFactor() external view returns (uint256 health);
-
-    function getCollateralPrice() external view returns (uint256);
-
-    function borrowDebtAmountToLTV(
-        uint256 id_,
-        uint256 ltv_,
-        uint256 collateralAmount_
+    function debtAmountFromCollateralToLtv(
+        uint256 collateralAmount_,
+        uint256 ltv_
     ) external view returns (uint256 debtAmount_);
 
-    function withdrawCollateralAmountToLTV(
-        uint256 id_,
-        uint256 ltv_,
-        uint256 debtAmount_
-    ) external view returns (uint256 collateralAmount_);
+    function collateralAmountFromDebtWithLtv(uint256 debtAmount_, uint256 ltv_)
+        external
+        view
+        returns (uint256 collateralAmount_);
 
     //============ CDP Operations ============//
 
@@ -111,9 +139,20 @@ interface ICDP {
 
     function openAndDeposit(uint256 amount_) external returns (uint256 id_);
 
+    function openAndDepositAndBorrow(
+        uint256 depositAmount_,
+        uint256 borrowAmount_
+    ) external returns (uint256 id_);
+
     function close(uint256 id_) external;
 
     function deposit(uint256 id_, uint256 amount_) external;
+
+    function depositAndBorrow(
+        uint256 id_,
+        uint256 depositAmount_,
+        uint256 borrowAmount_
+    ) external;
 
     function withdraw(uint256 id_, uint256 amount_) external;
 
@@ -121,9 +160,15 @@ interface ICDP {
 
     function repay(uint256 id_, uint256 amount_) external;
 
-    function updateFee(uint256 id_) external returns (uint256 additionalFee);
+    function repayAndWithdraw(
+        uint256 id_,
+        uint256 repayAmount_,
+        uint256 withdrawAmount_
+    ) external;
 
     function liquidate(uint256 id_) external;
 
     function globalLiquidate() external;
+
+    function updateFee(uint256 id_) external returns (uint256 additionalFee);
 }
