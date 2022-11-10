@@ -455,7 +455,8 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
 
         // send
         _debtToken.safeTransferFrom(_fromAccount, address(this), debtAmount_);
-        _shareToken.safeTransferFrom(_fromAccount, address(this), shareAmount_);
+        // _shareToken.safeTransferFrom(_fromAccount, address(this), shareAmount_);
+        IFOXS(address(_shareToken)).burnFrom(_fromAccount, shareAmount_);
 
         // fee
         if (_feeTo != address(0)) {
@@ -494,7 +495,8 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
 
         // receive
         _debtToken.safeTransfer(toAccount_, debtAmount_);
-        _shareToken.safeTransfer(toAccount_, shareAmount_);
+        // _shareToken.safeTransfer(toAccount_, shareAmount_);
+        IFOXS(address(_shareToken)).mintTo(toAccount_, shareAmount_);
     }
 
     //============ Recollateralize & Buyback ============//

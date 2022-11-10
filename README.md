@@ -324,6 +324,7 @@ $ dotenv -e .env.test -- npx hardhat run scripts/mint.js --network localhost
        - https://www.ankr.com/docs/staking/for-integrators/smart-contract-api/bnb-api/#stake-bnb-and-claim-abnbc
        - https://www.ankr.com/docs/staking/for-integrators/smart-contract-api/bnb-api/#unstake-abnbc-and-get-bnb
        - https://www.ankr.com/docs/staking/for-integrators/smart-contract-api/bnb-api/#get-apr
+- [ ] Is FOX is security token?
 
 # Proof-of-Work (non-tech)
 - [ ] solidity-docgen
