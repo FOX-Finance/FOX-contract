@@ -8,5 +8,5 @@ do
         "Content-type: application/json"\
         --data '{"jsonrpc":"2.0","method":"hardhat_mine","params":["0x1"], "id": 1}' # mine one block
     echo ""
-    dotenv -e .env.test -- npx hardhat run scripts/oracle.js --network localhost # set FOX price
+    dotenv -e .env.test -- npx hardhat run scripts/oracleUp.js --network localhost # set FOX price
 done
