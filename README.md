@@ -51,9 +51,10 @@ Solve Stablecoin's trilemma
 - [x] FoxFarm Gateway for view functions
 - [ ] Refactoring interfaces
 - [ ] `feeTo` -> share fees to FOXS holders
-- [ ] PSM
+- [ ] PSM: Stablecoins -> DAI: 0.1%, DAI -> Stablecoins: 1.0%
 - [ ] "Swap is more cheaper" message
 - [x] Use ethers.BigNumber instead of BigInt
+- [ ] TWAP for oracle
 
 # Future Work
 - [ ] Frontend advanced page

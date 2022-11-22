@@ -195,6 +195,15 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         returns (uint256 health)
     {
         CollateralizedDebtPosition memory _cdp = _cdps[id_];
+
+        if (_cdp.collateral == 0) {
+            if (_cdp.debt == 0) {
+                return 0;
+            } else {
+                return _DENOMINATOR;
+            }
+        }
+
         health =
             ((_cdp.debt + _cdp.fee) *
                 _DENOMINATOR *

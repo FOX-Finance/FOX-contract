@@ -21,7 +21,7 @@ module.exports = {
     hardhat: {
       forking: {
         enabled: true,
-        url: 'https://data-seed-prebsc-2-s2.binance.org:8545',
+        url: 'https://data-seed-prebsc-1-s3.binance.org:8545/',
         // blockNumber: 24243078,
         accounts: [
           process.env.PRIVATE_KEY_OWNER,
@@ -43,7 +43,7 @@ module.exports = {
       ],
     },
     bscTestnet: {
-      url: 'https://data-seed-prebsc-2-s2.binance.org:8545',
+      url: 'https://data-seed-prebsc-1-s3.binance.org:8545/',
       accounts: [
         process.env.PRIVATE_KEY_OWNER,
         process.env.PRIVATE_KEY_BOT,
