@@ -70,7 +70,7 @@ async function deploy() {
     const Psm = await ethers.getContractFactory("PSM", signer.owner);
     contract.psm = await Psm.deploy(
         contract.weth.address, contract.sin.address,
-        signer.feeTo.address, 200, 400
+        signer.feeTo.address, 10, 100
     );
     await contract.psm.deployed();
     console.log(":\t\t", contract.psm.address);
