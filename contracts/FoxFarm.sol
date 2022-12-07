@@ -43,7 +43,8 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         address coupon_,
         uint256 maxLTV_,
         uint256 cap_,
-        uint256 feeRatio_ // stability fee
+        uint256 feeRatio_, // stability fee
+        uint256 liquidationRatio_ // liquidation penalty fee
     )
         nonzeroAddress(oracleFeeder_)
         nonzeroAddress(collateralToken_)
@@ -58,7 +59,8 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
             debtToken_,
             maxLTV_,
             cap_,
-            feeRatio_
+            feeRatio_,
+            liquidationRatio_
         )
         nonzeroAddress(stableToken_)
         nonzeroAddress(coupon_)
@@ -224,7 +226,10 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
 
     //============ FOX Operations (Buyback) ============//
 
-    function buybackRepayDebt(uint256 id_, uint256 shareAmount_)
+    function buybackRepayDebt(
+        uint256 id_,
+        uint256 shareAmount_
+    )
         external
         updateIdFirst(id_)
         whenNotPaused
@@ -266,7 +271,10 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
 
     //============ Coupon Operations ============//
 
-    function buybackCoupon(address account_, uint256 amount_)
+    function buybackCoupon(
+        address account_,
+        uint256 amount_
+    )
         external
         whenNotPaused
         onlyGloballyHealthy
@@ -281,11 +289,10 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
     /**
      * @notice Pair annihilation between SIN and NIS.
      */
-    function pairAnnihilation(uint256 cid_, uint256 pid_)
-        external
-        updateIdFirst(cid_)
-        whenNotPaused
-    {
+    function pairAnnihilation(
+        uint256 cid_,
+        uint256 pid_
+    ) external updateIdFirst(cid_) whenNotPaused {
         (, uint256 grantAmount_) = _coupon.burn(pid_);
 
         CollateralizedDebtPosition storage _cdp = _cdps[cid_];

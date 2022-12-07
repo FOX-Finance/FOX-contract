@@ -40,6 +40,8 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     address internal _feeTo;
     uint256 internal _feeRatio; // (_feeRatio / _DENOMINATOR) // stability fee // TODO: default value
 
+    uint256 internal _liquidationRatio; // (_liquidationRatio / _DENOMINATOR) // liquidation penalty fee // TODO: default value
+
     // CDP
     mapping(uint256 => CollateralizedDebtPosition) public _cdps;
     uint256 public id;
@@ -91,7 +93,8 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         address debtToken_,
         uint256 maxLTV_,
         uint256 cap_,
-        uint256 feeRatio_
+        uint256 feeRatio_,
+        uint256 liquidationRatio_
     ) ERC721(name_, symbol_) Oracle(oracleFeeder_) {
         _feeTo = feeTo_; // can be zero address
         _collateralToken = IERC20(collateralToken_);
@@ -99,6 +102,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         maxLTV = maxLTV_;
         cap = cap_;
         _feeRatio = feeRatio_;
+        _liquidationRatio = liquidationRatio_;
     }
 
     //============ Owner ============//
@@ -125,6 +129,14 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         uint256 prevFeeRatio = _feeRatio;
         _feeRatio = newFeeRatio;
         emit SetFeeRatio(prevFeeRatio, _feeRatio);
+    }
+
+    function setLiquidationRatio(
+        uint256 newLiquidationRatio
+    ) external virtual onlyOwner {
+        uint256 prevLiquidationRatio = _liquidationRatio;
+        _liquidationRatio = newLiquidationRatio;
+        emit SetFeeRatio(prevLiquidationRatio, _liquidationRatio);
     }
 
     //============ Pausable ============//
@@ -173,12 +185,9 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     }
 
     /// @dev multiplied by _DENOMINATOR.
-    function currentLTV(uint256 id_)
-        public
-        view
-        virtual
-        returns (uint256 ltv_)
-    {
+    function currentLTV(
+        uint256 id_
+    ) public view virtual returns (uint256 ltv_) {
         if (id_ >= id) {
             return 0;
         } else {
@@ -188,12 +197,9 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     }
 
     /// @dev multiplied by _DENOMINATOR.
-    function healthFactor(uint256 id_)
-        public
-        view
-        virtual
-        returns (uint256 health)
-    {
+    function healthFactor(
+        uint256 id_
+    ) public view virtual returns (uint256 health) {
         CollateralizedDebtPosition memory _cdp = _cdps[id_];
 
         if (_cdp.collateral == 0) {
@@ -223,22 +229,18 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
 
     //============ View Functions ============//
 
-    function cdp(uint256 id_)
-        external
-        view
-        returns (CollateralizedDebtPosition memory)
-    {
+    function cdp(
+        uint256 id_
+    ) external view returns (CollateralizedDebtPosition memory) {
         return _cdps[id_];
     }
 
-    function cdpInfo(uint256 id_)
+    function cdpInfo(
+        uint256 id_
+    )
         external
         view
-        returns (
-            uint256 collateralAmount_,
-            uint256 ltv_,
-            uint256 fee_
-        )
+        returns (uint256 collateralAmount_, uint256 ltv_, uint256 fee_)
     {
         CollateralizedDebtPosition memory _cdp = _cdps[id_];
         collateralAmount_ = _cdp.collateral;
@@ -247,12 +249,10 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     }
 
     /// @dev multiplied by _DENOMINATOR.
-    function calculatedLtv(uint256 collateralAmount_, uint256 debtAmount_)
-        public
-        view
-        virtual
-        returns (uint256 ltv_)
-    {
+    function calculatedLtv(
+        uint256 collateralAmount_,
+        uint256 debtAmount_
+    ) public view virtual returns (uint256 ltv_) {
         ltv_ =
             (debtAmount_ * _DENOMINATOR * _DENOMINATOR) /
             (collateralAmount_ * _collateralPrice);
@@ -285,11 +285,10 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
             (_DENOMINATOR * _DENOMINATOR);
     }
 
-    function collateralAmountFromDebtWithLtv(uint256 debtAmount_, uint256 ltv_)
-        public
-        view
-        returns (uint256 collateralAmount_)
-    {
+    function collateralAmountFromDebtWithLtv(
+        uint256 debtAmount_,
+        uint256 ltv_
+    ) public view returns (uint256 collateralAmount_) {
         collateralAmount_ =
             (debtAmount_ * _DENOMINATOR * _DENOMINATOR) /
             (ltv_ * _collateralPrice);
@@ -318,12 +317,9 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
      *
      * - Do `approve` first.
      */
-    function openAndDeposit(uint256 amount_)
-        external
-        virtual
-        whenNotPaused
-        returns (uint256 id_)
-    {
+    function openAndDeposit(
+        uint256 amount_
+    ) external virtual whenNotPaused returns (uint256 id_) {
         address msgSender = _msgSender();
 
         id_ = _open(msgSender);
@@ -346,7 +342,9 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     /**
      * @notice Closes the `id_` CDP position.
      */
-    function close(uint256 id_)
+    function close(
+        uint256 id_
+    )
         external
         updateIdFirst(id_)
         whenNotPaused
@@ -362,11 +360,10 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
      *
      * - Do `approve` first.
      */
-    function deposit(uint256 id_, uint256 amount_)
-        external
-        updateIdFirst(id_)
-        whenNotPaused
-    {
+    function deposit(
+        uint256 id_,
+        uint256 amount_
+    ) external updateIdFirst(id_) whenNotPaused {
         _deposit(_msgSender(), id_, amount_);
     }
 
@@ -387,7 +384,10 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     /**
      * @notice Withdraws collateral from `this` to `_msgSender()`.
      */
-    function withdraw(uint256 id_, uint256 amount_)
+    function withdraw(
+        uint256 id_,
+        uint256 amount_
+    )
         external
         updateIdFirst(id_)
         whenNotPaused
@@ -399,7 +399,10 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     /**
      * @notice Borrows `amount_` debts.
      */
-    function borrow(uint256 id_, uint256 amount_)
+    function borrow(
+        uint256 id_,
+        uint256 amount_
+    )
         external
         updateIdFirst(id_)
         whenNotPaused
@@ -411,11 +414,10 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     /**
      * @notice Repays `amount_` debts.
      */
-    function repay(uint256 id_, uint256 amount_)
-        external
-        updateIdFirst(id_)
-        whenNotPaused
-    {
+    function repay(
+        uint256 id_,
+        uint256 amount_
+    ) external updateIdFirst(id_) whenNotPaused {
         _repay(_msgSender(), id_, amount_);
     }
 
@@ -430,9 +432,11 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     }
 
     // TODO: auction
-    function liquidate(uint256 id_) external updateIdFirst(id_) {
-        require(!isSafe(id_), "CDP::liquidate: CDP must be unsafe.");
-        _close(_msgSender(), id_);
+    function liquidate(
+        uint256 id_,
+        uint256 amount_
+    ) external updateIdFirst(id_) {
+        _liquidate(_msgSender(), id_, amount_);
     }
 
     // TODO
@@ -447,11 +451,9 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
 
     //============ Internal Functions ============//
 
-    function _open(address account_)
-        internal
-        onlyGloballyHealthy
-        returns (uint256 id_)
-    {
+    function _open(
+        address account_
+    ) internal onlyGloballyHealthy returns (uint256 id_) {
         id_ = id++;
 
         _safeMint(account_, id_); // mint NFT
@@ -478,11 +480,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         emit Close(account_, id_);
     }
 
-    function _deposit(
-        address account_,
-        uint256 id_,
-        uint256 amount_
-    ) internal {
+    function _deposit(address account_, uint256 id_, uint256 amount_) internal {
         CollateralizedDebtPosition storage _cdp = _cdps[id_];
 
         // require(_isApprovedOrOwner(_sender, id_)); // Anyone
@@ -607,5 +605,30 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         currFee = _cdp.fee;
 
         emit Update(id_, prevFee, currFee, prevTimestamp, currTimestamp);
+    }
+
+    function _liquidate(
+        address account_, // from & to
+        uint256 id_,
+        uint256 amount_
+    ) internal virtual {
+        require(!isSafe(id_), "CDP::liquidate: CDP must be unsafe.");
+
+        // _close(_msgSender(), id_);
+
+        // repay
+        _repay(account_, id_, amount_);
+
+        // withdraw
+        uint256 _collateralAmountWithPenalty = (amount_ *
+            (_DENOMINATOR + _liquidationRatio)) / _collateralPrice;
+
+        CollateralizedDebtPosition storage _cdp = _cdps[id_];
+
+        _cdp.collateral -= _collateralAmountWithPenalty;
+        totalCollateral -= _collateralAmountWithPenalty;
+        _collateralToken.safeTransfer(account_, _collateralAmountWithPenalty);
+
+        emit Liquidate(account_, id_, amount_, _collateralAmountWithPenalty);
     }
 }
