@@ -344,12 +344,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
      */
     function close(
         uint256 id_
-    )
-        external
-        updateIdFirst(id_)
-        whenNotPaused
-        onlyCdpApprovedOrOwner(_msgSender(), id_)
-    {
+    ) external updateIdFirst(id_) onlyCdpApprovedOrOwner(_msgSender(), id_) {
         _close(_msgSender(), id_);
     }
 
@@ -387,12 +382,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     function withdraw(
         uint256 id_,
         uint256 amount_
-    )
-        external
-        updateIdFirst(id_)
-        whenNotPaused
-        onlyCdpApprovedOrOwner(_msgSender(), id_)
-    {
+    ) external updateIdFirst(id_) onlyCdpApprovedOrOwner(_msgSender(), id_) {
         _withdraw(_msgSender(), id_, amount_);
     }
 
@@ -414,10 +404,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     /**
      * @notice Repays `amount_` debts.
      */
-    function repay(
-        uint256 id_,
-        uint256 amount_
-    ) external updateIdFirst(id_) whenNotPaused {
+    function repay(uint256 id_, uint256 amount_) external updateIdFirst(id_) {
         _repay(_msgSender(), id_, amount_);
     }
 
@@ -425,7 +412,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         uint256 id_,
         uint256 repayAmount_,
         uint256 withdrawAmount_
-    ) external updateIdFirst(id_) whenNotPaused {
+    ) external updateIdFirst(id_) {
         address msgSender = _msgSender();
         _repay(msgSender, id_, repayAmount_);
         _withdraw(msgSender, id_, withdrawAmount_);
@@ -436,11 +423,19 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         uint256 id_,
         uint256 amount_
     ) external updateIdFirst(id_) {
-        _liquidate(_msgSender(), id_, amount_);
+        _liquidate(_msgSender(), id_, amount_, _liquidationRatio);
     }
 
-    // TODO
-    function globalLiquidate() external onlyOwner whenPaused {}
+    /**
+     * @notice Liquidation fee is deducted when paused.
+     * @dev First `pause()`, then `globalLiquidate()`.
+     */
+    function globalLiquidate(
+        uint256 id_,
+        uint256 amount_
+    ) external onlyOwner whenPaused {
+        _liquidate(_msgSender(), id_, amount_, 0);
+    }
 
     /**
      * @notice Update fee.
@@ -610,7 +605,8 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     function _liquidate(
         address account_, // from & to
         uint256 id_,
-        uint256 amount_
+        uint256 amount_,
+        uint256 liquidationRatio_
     ) internal virtual {
         require(!isSafe(id_), "CDP::liquidate: CDP must be unsafe.");
 
@@ -621,7 +617,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
 
         // withdraw
         uint256 _collateralAmountWithPenalty = (amount_ *
-            (_DENOMINATOR + _liquidationRatio)) / _collateralPrice;
+            (_DENOMINATOR + liquidationRatio_)) / _collateralPrice;
 
         CollateralizedDebtPosition storage _cdp = _cdps[id_];
 

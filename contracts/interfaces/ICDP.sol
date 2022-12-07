@@ -179,7 +179,7 @@ interface ICDP {
 
     function liquidate(uint256 id_, uint256 amount_) external;
 
-    function globalLiquidate() external;
+    function globalLiquidate(uint256 id_, uint256 amount_) external;
 
     function updateFee(uint256 id_) external returns (uint256 additionalFee);
 }
