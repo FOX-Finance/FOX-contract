@@ -66,6 +66,15 @@ async function deploy() {
     await contract.gateway.deployed();
     console.log(":\t\t", contract.gateway.address);
 
+    process.stdout.write("Deploy PSM");
+    const Psm = await ethers.getContractFactory("PSM", signer.owner);
+    contract.psm = await Psm.deploy(
+        contract.weth.address, contract.sin.address,
+        signer.feeTo.address, 200, 400
+    );
+    await contract.psm.deployed();
+    console.log(":\t\t", contract.psm.address);
+
     fs.writeFileSync("address.json", JSON.stringify({
         "Owner": signer.owner.address,
         "Bot": signer.bot.address,
@@ -78,7 +87,8 @@ async function deploy() {
         "FOX": contract.fox.address,
         "Coupon": contract.coupon.address,
         "FoxFarm": contract.foxFarm.address,
-        "Gateway": contract.gateway.address
+        "Gateway": contract.gateway.address,
+        "PSM": contract.psm.address
     }, null, 4));
 }
 
@@ -98,8 +108,13 @@ async function init() {
     // await txRes.wait();
     // console.log(" - complete");
 
-    process.stdout.write("[SIN]\t\tSet SIN's whitelist");
+    process.stdout.write("[SIN]\t\tSet SIN's whitelist - FoxFarm");
     txRes = await contract.sin.connect(signer.owner).addAllowlist(contract.foxFarm.address);
+    await txRes.wait();
+    console.log(" - complete");
+
+    process.stdout.write("[SIN]\t\tSet SIN's whitelist - PSM");
+    txRes = await contract.sin.connect(signer.owner).addAllowlist(contract.psm.address);
     await txRes.wait();
     console.log(" - complete");
 

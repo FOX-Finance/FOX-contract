@@ -15,7 +15,8 @@ let contract = {
     "fox": null,
     "coupon": null,
     "foxFarm": null,
-    "gateway": null
+    "gateway": null,
+    "psm": null
 };
 
 async function set() {
@@ -59,6 +60,10 @@ async function attach() {
 
     process.stdout.write("Attach OracleFeeder");
     contract.oracleFeeder = await ethers.getContractAt("OracleFeeder", address.OracleFeeder);
+    console.log(" - complete");
+
+    process.stdout.write("Attach PSM");
+    contract.psm = await ethers.getContractAt("PSM", address.PSM);
     console.log(" - complete");
 }
 
