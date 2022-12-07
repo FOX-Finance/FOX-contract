@@ -64,7 +64,7 @@ async function attach() {
     console.log(" - complete");
 
     process.stdout.write("Attach USDC");
-    contract.usdc = await ethers.getContractAt("USDC", address.USDC);
+    contract.usdc = await ethers.getContractAt("TestERC20", address.USDC);
     console.log(" - complete");
 
     process.stdout.write("Attach PSM");
