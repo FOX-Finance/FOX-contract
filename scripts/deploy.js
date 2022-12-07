@@ -66,10 +66,16 @@ async function deploy() {
     await contract.gateway.deployed();
     console.log(":\t\t", contract.gateway.address);
 
+    process.stdout.write("Deploy USDC");
+    const USDC = await ethers.getContractFactory("TestERC20", signer.owner);
+    contract.usdc = await USDC.deploy();
+    await contract.usdc.deployed();
+    console.log(":\t\t", contract.usdc.address);
+
     process.stdout.write("Deploy PSM");
     const Psm = await ethers.getContractFactory("PSM", signer.owner);
     contract.psm = await Psm.deploy(
-        contract.weth.address, contract.sin.address,
+        contract.usdc.address, contract.sin.address,
         signer.feeTo.address, 10, 100
     );
     await contract.psm.deployed();
@@ -88,6 +94,7 @@ async function deploy() {
         "Coupon": contract.coupon.address,
         "FoxFarm": contract.foxFarm.address,
         "Gateway": contract.gateway.address,
+        "USDC": contract.usdc.address,
         "PSM": contract.psm.address
     }, null, 4));
 }
