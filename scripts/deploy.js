@@ -93,8 +93,13 @@ async function init() {
 
     //============ Ownership ============//
 
-    process.stdout.write("[SIN]\t\tChange SIN's owner to FoxFarm");
-    txRes = await contract.sin.connect(signer.owner).transferOwnership(contract.foxFarm.address);
+    // process.stdout.write("[SIN]\t\tChange SIN's owner to FoxFarm");
+    // txRes = await contract.sin.connect(signer.owner).transferOwnership(contract.foxFarm.address);
+    // await txRes.wait();
+    // console.log(" - complete");
+
+    process.stdout.write("[SIN]\t\tSet SIN's whitelist");
+    txRes = await contract.sin.connect(signer.owner).addAllowlist(contract.foxFarm.address);
     await txRes.wait();
     console.log(" - complete");
 
