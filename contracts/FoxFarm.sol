@@ -44,7 +44,7 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         uint256 maxLTV_,
         uint256 cap_,
         uint256 feeRatio_, // stability fee
-        uint256 liquidationRatio_ // liquidation penalty fee
+        uint256 liquidationPenaltyRatio_ // liquidation penalty fee
     )
         nonzeroAddress(oracleFeeder_)
         nonzeroAddress(collateralToken_)
@@ -60,7 +60,7 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
             maxLTV_,
             cap_,
             feeRatio_,
-            liquidationRatio_
+            liquidationPenaltyRatio_
         )
         nonzeroAddress(stableToken_)
         nonzeroAddress(coupon_)

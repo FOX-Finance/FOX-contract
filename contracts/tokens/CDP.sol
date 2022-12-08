@@ -40,7 +40,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     address internal _feeTo;
     uint256 internal _feeRatio; // (_feeRatio / _DENOMINATOR) // stability fee // TODO: default value
 
-    uint256 internal _liquidationRatio; // (_liquidationRatio / _DENOMINATOR) // liquidation penalty fee // TODO: default value
+    uint256 internal _liquidationPenaltyRatio; // (_liquidationPenaltyRatio / _DENOMINATOR) // TODO: default value
 
     // CDP
     mapping(uint256 => CollateralizedDebtPosition) public _cdps;
@@ -94,7 +94,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         uint256 maxLTV_,
         uint256 cap_,
         uint256 feeRatio_,
-        uint256 liquidationRatio_
+        uint256 liquidationPenaltyRatio_
     ) ERC721(name_, symbol_) Oracle(oracleFeeder_) {
         _feeTo = feeTo_; // can be zero address
         _collateralToken = IERC20(collateralToken_);
@@ -102,7 +102,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         maxLTV = maxLTV_;
         cap = cap_;
         _feeRatio = feeRatio_;
-        _liquidationRatio = liquidationRatio_;
+        _liquidationPenaltyRatio = liquidationPenaltyRatio_;
     }
 
     //============ Owner ============//
@@ -131,12 +131,12 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         emit SetFeeRatio(prevFeeRatio, _feeRatio);
     }
 
-    function setLiquidationRatio(
-        uint256 newLiquidationRatio
+    function setLiquidationPenaltyRatio(
+        uint256 newLiquidationPenaltyRatio
     ) external virtual onlyOwner {
-        uint256 prevLiquidationRatio = _liquidationRatio;
-        _liquidationRatio = newLiquidationRatio;
-        emit SetFeeRatio(prevLiquidationRatio, _liquidationRatio);
+        uint256 prevLiquidationPenaltyRatio = _liquidationPenaltyRatio;
+        _liquidationPenaltyRatio = newLiquidationPenaltyRatio;
+        emit SetFeeRatio(prevLiquidationPenaltyRatio, _liquidationPenaltyRatio);
     }
 
     //============ Pausable ============//
@@ -294,6 +294,20 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
             (ltv_ * _collateralPrice);
     }
 
+    function debtAmountRangeWhenLiquidate(
+        uint256 id_
+    ) public view returns (uint256 upperBound_, uint256 lowerBound_) {
+        CollateralizedDebtPosition memory _cdp = _cdps[id_];
+
+        upperBound_ =
+            ((_DENOMINATOR * _DENOMINATOR * _cdp.debt) -
+                (maxLTV * _cdp.collateral * _collateralPrice)) /
+            ((_DENOMINATOR * _DENOMINATOR) -
+                (maxLTV * (_liquidationPenaltyRatio + _DENOMINATOR)));
+
+        // lowerBound_ = 0;
+    }
+
     //============ CDP Operations ============//
 
     /**
@@ -423,7 +437,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         uint256 id_,
         uint256 amount_
     ) external updateIdFirst(id_) {
-        _liquidate(_msgSender(), id_, amount_, _liquidationRatio);
+        _liquidate(_msgSender(), id_, amount_, _liquidationPenaltyRatio);
     }
 
     /**
@@ -611,7 +625,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         address account_, // from & to
         uint256 id_,
         uint256 amount_,
-        uint256 liquidationRatio_
+        uint256 liquidationPenaltyRatio_
     ) internal virtual {
         require(!isSafe(id_), "CDP::liquidate: CDP must be unsafe.");
 
@@ -622,7 +636,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
 
         // withdraw
         uint256 _collateralAmountWithPenalty = (amount_ *
-            (_DENOMINATOR + liquidationRatio_)) / _collateralPrice;
+            (_DENOMINATOR + liquidationPenaltyRatio_)) / _collateralPrice;
 
         CollateralizedDebtPosition storage _cdp = _cdps[id_];
 

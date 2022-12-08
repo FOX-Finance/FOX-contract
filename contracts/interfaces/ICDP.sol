@@ -70,9 +70,9 @@ interface ICDP {
     event SetFeeTo(address prevFeeTo, address currFeeTo);
     event SetFeeRatio(uint256 prevFeeRatio, uint256 currFeeRatio);
 
-    event SetLiquidationRatio(
-        uint256 prevLiquidationRatio,
-        uint256 currLiquidationRatio
+    event SetLiquidationPenaltyRatio(
+        uint256 prevLiquidationPenaltyRatio,
+        uint256 currLiquidationPenaltyRatio
     );
 
     //============ Owner ============//
@@ -85,7 +85,7 @@ interface ICDP {
 
     function setFeeRatio(uint256 newFeeRatio) external;
 
-    function setLiquidationRatio(uint256 newLiquidationRatio) external;
+    function setLiquidationPenaltyRatio(uint256 newLiquidationPenaltyRatio) external;
 
     //============ Pausable ============//
 
