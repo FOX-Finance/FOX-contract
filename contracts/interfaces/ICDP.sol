@@ -153,6 +153,10 @@ interface ICDP {
         uint256 ltv_
     ) external view returns (uint256 collateralAmount_);
 
+    function debtAmountRangeWhenLiquidate(
+        uint256 id_
+    ) external view returns (uint256 upperBound_, uint256 lowerBound_);
+
     //============ CDP Operations ============//
 
     function open() external returns (uint256 id_);
