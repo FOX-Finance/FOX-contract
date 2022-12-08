@@ -433,7 +433,12 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     function globalLiquidate(
         uint256 id_,
         uint256 amount_
-    ) external onlyOwner whenPaused {
+    )
+        external
+        updateIdFirst(id_)
+        whenPaused
+        onlyCdpApprovedOrOwner(_msgSender(), id_)
+    {
         _liquidate(_msgSender(), id_, amount_, 0);
     }
 
