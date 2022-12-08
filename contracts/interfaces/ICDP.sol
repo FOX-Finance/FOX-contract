@@ -73,6 +73,10 @@ interface ICDP {
         uint256 prevLiquidationPenaltyRatio,
         uint256 currLiquidationPenaltyRatio
     );
+    event SetLiquidationProtocolFeeRatio(
+        uint256 prevLiquidationProtocolFeeRatio,
+        uint256 currLiquidationProtocolFeeRatio
+    );
     event SetLiquidationBufferRatio(
         uint256 prevLiquidationBufferRatio,
         uint256 currLiquidationBufferRatio
@@ -90,6 +94,10 @@ interface ICDP {
 
     function setLiquidationPenaltyRatio(
         uint256 newLiquidationPenaltyRatio
+    ) external;
+
+    function setLiquidationProtocolFeeRatio(
+        uint256 newLiquidationProtocolFeeRatio
     ) external;
 
     function setLiquidationBufferRatio(

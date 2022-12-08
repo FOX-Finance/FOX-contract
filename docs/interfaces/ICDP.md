@@ -95,6 +95,18 @@
 
 
 
+### `setLiquidationProtocolFeeRatio(uint256 newLiquidationProtocolFeeRatio)` (external)
+
+
+
+
+
+### `setLiquidationBufferRatio(uint256 newLiquidationBufferRatio)` (external)
+
+
+
+
+
 ### `pause()` (external)
 
 
@@ -174,6 +186,12 @@
 
 
 ### `collateralAmountFromDebtWithLtv(uint256 debtAmount_, uint256 ltv_) → uint256 collateralAmount_` (external)
+
+
+
+
+
+### `debtAmountRangeWhenLiquidate(uint256 id_) → uint256 upperBound_, uint256 lowerBound_` (external)
 
 
 
@@ -331,6 +349,18 @@
 
 
 ### `SetLiquidationPenaltyRatio(uint256 prevLiquidationPenaltyRatio, uint256 currLiquidationPenaltyRatio)`
+
+
+
+
+
+### `SetLiquidationProtocolFeeRatio(uint256 prevLiquidationProtocolFeeRatio, uint256 currLiquidationProtocolFeeRatio)`
+
+
+
+
+
+### `SetLiquidationBufferRatio(uint256 prevLiquidationBufferRatio, uint256 currLiquidationBufferRatio)`
 
 
 

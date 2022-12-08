@@ -6,7 +6,7 @@ Also it is treasury of collaterals-WETHs- and SINs.
 
 
 
-### `constructor(address oracleFeeder_, address feeTo_, address collateralToken_, address debtToken_, address shareToken_, address stableToken_, address coupon_, uint256 maxLTV_, uint256 cap_, uint256 feeRatio_, uint256 liquidationPenaltyRatio_)` (public)
+### `constructor(address oracleFeeder_, address feeTo_, address collateralToken_, address debtToken_, address shareToken_, address stableToken_, address coupon_, uint256 maxLTV_, uint256 cap_, uint256 feeRatio_, uint256 liquidationPenaltyRatio_, uint256 liquidationBufferRatio_)` (public)
 
 
 

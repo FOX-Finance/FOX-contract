@@ -36,7 +36,7 @@ Abstract contract.
 
 
 
-### `constructor(string name_, string symbol_, address oracleFeeder_, address feeTo_, address collateralToken_, address debtToken_, uint256 maxLTV_, uint256 cap_, uint256 feeRatio_, uint256 liquidationPenaltyRatio_)` (internal)
+### `constructor(string name_, string symbol_, address oracleFeeder_, address feeTo_, address collateralToken_, address debtToken_, uint256 maxLTV_, uint256 cap_, uint256 feeRatio_, uint256 liquidationPenaltyRatio_, uint256 liquidationBufferRatio_)` (internal)
 
 
 
@@ -67,6 +67,18 @@ Abstract contract.
 
 
 ### `setLiquidationPenaltyRatio(uint256 newLiquidationPenaltyRatio)` (external)
+
+
+
+
+
+### `setLiquidationProtocolFeeRatio(uint256 newLiquidationProtocolFeeRatio)` (external)
+
+
+
+
+
+### `setLiquidationBufferRatio(uint256 newLiquidationBufferRatio)` (external)
 
 
 
@@ -263,7 +275,7 @@ Repays `amount_` debts.
 
 ### `globalLiquidate(uint256 id_, uint256 amount_)` (external)
 
-Liquidation fee is deducted when paused.
+Liquidation fee is deducted and no upper bound exists when paused.
 
 
 First `pause()`, then `globalLiquidate()`.
@@ -310,16 +322,16 @@ Update fee.
 
 
 
+### `_liquidate(address account_, uint256 id_, uint256 amount_, uint256 liquidationPenaltyRatio_, uint256 liquidationProtocolFeeRatio_)` (internal)
+
+
+
+
+
 ### `_update(uint256 id_) → uint256 additionalFee` (internal)
 
 
 
 Updates fee and timestamp.
-
-### `_liquidate(address account_, uint256 id_, uint256 amount_, uint256 liquidationPenaltyRatio_)` (internal)
-
-
-
-
 
 
