@@ -89,7 +89,7 @@
 
 
 
-### `setLiquidationRatio(uint256 newLiquidationRatio)` (external)
+### `setLiquidationPenaltyRatio(uint256 newLiquidationPenaltyRatio)` (external)
 
 
 
@@ -330,7 +330,7 @@
 
 
 
-### `SetLiquidationRatio(uint256 prevLiquidationRatio, uint256 currLiquidationRatio)`
+### `SetLiquidationPenaltyRatio(uint256 prevLiquidationPenaltyRatio, uint256 currLiquidationPenaltyRatio)`
 
 
 

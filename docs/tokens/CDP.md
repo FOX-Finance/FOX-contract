@@ -36,7 +36,7 @@ Abstract contract.
 
 
 
-### `constructor(string name_, string symbol_, address oracleFeeder_, address feeTo_, address collateralToken_, address debtToken_, uint256 maxLTV_, uint256 cap_, uint256 feeRatio_, uint256 liquidationRatio_)` (internal)
+### `constructor(string name_, string symbol_, address oracleFeeder_, address feeTo_, address collateralToken_, address debtToken_, uint256 maxLTV_, uint256 cap_, uint256 feeRatio_, uint256 liquidationPenaltyRatio_)` (internal)
 
 
 
@@ -66,7 +66,7 @@ Abstract contract.
 
 
 
-### `setLiquidationRatio(uint256 newLiquidationRatio)` (external)
+### `setLiquidationPenaltyRatio(uint256 newLiquidationPenaltyRatio)` (external)
 
 
 
@@ -175,6 +175,12 @@ multiplied by _DENOMINATOR.
 
 
 ### `collateralAmountFromDebtWithLtv(uint256 debtAmount_, uint256 ltv_) → uint256 collateralAmount_` (public)
+
+
+
+
+
+### `debtAmountRangeWhenLiquidate(uint256 id_) → uint256 upperBound_, uint256 lowerBound_` (public)
 
 
 
@@ -310,7 +316,7 @@ Update fee.
 
 Updates fee and timestamp.
 
-### `_liquidate(address account_, uint256 id_, uint256 amount_, uint256 liquidationRatio_)` (internal)
+### `_liquidate(address account_, uint256 id_, uint256 amount_, uint256 liquidationPenaltyRatio_)` (internal)
 
 
 
