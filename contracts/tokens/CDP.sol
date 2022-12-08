@@ -37,10 +37,12 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     uint256 public maxLTV; // (maxLTV / _DENOMINATOR)
     uint256 public cap; // total debt cap
 
+    // fee
     address internal _feeTo;
     uint256 internal _feeRatio; // (_feeRatio / _DENOMINATOR) // stability fee // TODO: default value
-
     uint256 internal _liquidationPenaltyRatio; // (_liquidationPenaltyRatio / _DENOMINATOR) // TODO: default value
+    uint256 internal _liquidationProtocolFeeRatio; // (_liquidationPenaltyRatio / _DENOMINATOR) // default 0
+    uint256 internal _liquidationBufferRatio; // (_liquidationPenaltyRatio / _DENOMINATOR) // TODO: default value
 
     // CDP
     mapping(uint256 => CollateralizedDebtPosition) public _cdps;
@@ -94,7 +96,8 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         uint256 maxLTV_,
         uint256 cap_,
         uint256 feeRatio_,
-        uint256 liquidationPenaltyRatio_
+        uint256 liquidationPenaltyRatio_,
+        uint256 liquidationBufferRatio_
     ) ERC721(name_, symbol_) Oracle(oracleFeeder_) {
         _feeTo = feeTo_; // can be zero address
         _collateralToken = IERC20(collateralToken_);
@@ -103,6 +106,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         cap = cap_;
         _feeRatio = feeRatio_;
         _liquidationPenaltyRatio = liquidationPenaltyRatio_;
+        _liquidationBufferRatio = liquidationBufferRatio_;
     }
 
     //============ Owner ============//
@@ -136,7 +140,21 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     ) external virtual onlyOwner {
         uint256 prevLiquidationPenaltyRatio = _liquidationPenaltyRatio;
         _liquidationPenaltyRatio = newLiquidationPenaltyRatio;
-        emit SetFeeRatio(prevLiquidationPenaltyRatio, _liquidationPenaltyRatio);
+        emit SetLiquidationPenaltyRatio(
+            prevLiquidationPenaltyRatio,
+            _liquidationPenaltyRatio
+        );
+    }
+
+    function setLiquidationBufferRatio(
+        uint256 newLiquidationBufferRatio
+    ) external virtual onlyOwner {
+        uint256 prevLiquidationBufferRatio = _liquidationBufferRatio;
+        _liquidationBufferRatio = newLiquidationBufferRatio;
+        emit SetLiquidationBufferRatio(
+            prevLiquidationBufferRatio,
+            _liquidationBufferRatio
+        );
     }
 
     //============ Pausable ============//
@@ -300,10 +318,12 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         CollateralizedDebtPosition memory _cdp = _cdps[id_];
 
         upperBound_ =
-            ((_DENOMINATOR * _DENOMINATOR * _cdp.debt) -
-                (maxLTV * _cdp.collateral * _collateralPrice)) /
-            ((_DENOMINATOR * _DENOMINATOR) -
-                (maxLTV * (_liquidationPenaltyRatio + _DENOMINATOR)));
+            (((_DENOMINATOR * _DENOMINATOR * _cdp.debt) -
+                (maxLTV * _cdp.collateral * _collateralPrice)) *
+                (_liquidationBufferRatio + _DENOMINATOR)) /
+            (((_DENOMINATOR * _DENOMINATOR) -
+                (maxLTV * (_liquidationPenaltyRatio + _DENOMINATOR))) *
+                _DENOMINATOR);
 
         // lowerBound_ = 0;
     }
@@ -437,22 +457,26 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         uint256 id_,
         uint256 amount_
     ) external updateIdFirst(id_) {
+        (
+            uint256 _upperBound,
+            uint256 _lowerBound
+        ) = debtAmountRangeWhenLiquidate(id_);
+        require(
+            (_lowerBound <= amount_) && (amount_ <= _upperBound),
+            "CDP::liquidate: amount - out of range."
+        );
+
         _liquidate(_msgSender(), id_, amount_, _liquidationPenaltyRatio);
     }
 
     /**
-     * @notice Liquidation fee is deducted when paused.
+     * @notice Liquidation fee is deducted and no upper bound exists when paused.
      * @dev First `pause()`, then `globalLiquidate()`.
      */
     function globalLiquidate(
         uint256 id_,
         uint256 amount_
-    )
-        external
-        updateIdFirst(id_)
-        whenPaused
-        onlyCdpApprovedOrOwner(_msgSender(), id_)
-    {
+    ) external updateIdFirst(id_) whenPaused {
         _liquidate(_msgSender(), id_, amount_, 0);
     }
 
@@ -594,6 +618,32 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         emit Repay(account_, id_, amount_);
     }
 
+    function _liquidate(
+        address account_, // from & to
+        uint256 id_,
+        uint256 amount_,
+        uint256 liquidationPenaltyRatio_
+    ) internal virtual {
+        require(!isSafe(id_), "CDP::liquidate: CDP must be unsafe.");
+
+        // _close(_msgSender(), id_);
+
+        // repay
+        _repay(account_, id_, amount_);
+
+        // withdraw
+        uint256 _collateralAmountWithPenalty = (amount_ *
+            (_DENOMINATOR + liquidationPenaltyRatio_)) / _collateralPrice;
+
+        CollateralizedDebtPosition storage _cdp = _cdps[id_];
+
+        _cdp.collateral -= _collateralAmountWithPenalty;
+        totalCollateral -= _collateralAmountWithPenalty;
+        _collateralToken.safeTransfer(account_, _collateralAmountWithPenalty);
+
+        emit Liquidate(account_, id_, amount_, _collateralAmountWithPenalty);
+    }
+
     /**
      * @dev Updates fee and timestamp.
      */
@@ -619,31 +669,5 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         currFee = _cdp.fee;
 
         emit Update(id_, prevFee, currFee, prevTimestamp, currTimestamp);
-    }
-
-    function _liquidate(
-        address account_, // from & to
-        uint256 id_,
-        uint256 amount_,
-        uint256 liquidationPenaltyRatio_
-    ) internal virtual {
-        require(!isSafe(id_), "CDP::liquidate: CDP must be unsafe.");
-
-        // _close(_msgSender(), id_);
-
-        // repay
-        _repay(account_, id_, amount_);
-
-        // withdraw
-        uint256 _collateralAmountWithPenalty = (amount_ *
-            (_DENOMINATOR + liquidationPenaltyRatio_)) / _collateralPrice;
-
-        CollateralizedDebtPosition storage _cdp = _cdps[id_];
-
-        _cdp.collateral -= _collateralAmountWithPenalty;
-        totalCollateral -= _collateralAmountWithPenalty;
-        _collateralToken.safeTransfer(account_, _collateralAmountWithPenalty);
-
-        emit Liquidate(account_, id_, amount_, _collateralAmountWithPenalty);
     }
 }

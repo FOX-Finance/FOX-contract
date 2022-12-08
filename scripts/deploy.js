@@ -53,7 +53,7 @@ async function deploy() {
     contract.foxFarm = await FoxFarm.deploy(
         contract.oracleFeeder.address, signer.feeTo.address,
         contract.weth.address, contract.sin.address, contract.foxs.address, contract.fox.address, contract.coupon.address,
-        7000, ethers.constants.MaxUint256, 200, 1000
+        7000, ethers.constants.MaxUint256, 200, 1000, 1000
     );
     await contract.foxFarm.deployed();
     console.log(":\t\t", contract.foxFarm.address);
