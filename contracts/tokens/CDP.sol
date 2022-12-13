@@ -210,7 +210,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
 
     /// @dev multiplied by _DENOMINATOR.
     function globalLTV() public view virtual returns (uint256 ltv_) {
-        ltv_ = calculatedLtv(totalDebt, totalCollateral);
+        ltv_ = calculatedLtv(totalCollateral, totalDebt);
     }
 
     /// @dev multiplied by _DENOMINATOR.
