@@ -258,17 +258,18 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
 
     function buybackCoupon(
         address account_,
-        uint256 amount_
+        uint256 shareAmount_
     )
         external
         whenNotPaused
         onlyGloballyHealthy
         returns (uint256 pid_, uint256 debtAmount_)
     {
-        _shareToken.safeTransferFrom(_msgSender(), address(this), amount_);
-        debtAmount_ = _stableToken.buyback(address(this), amount_);
+        _shareToken.safeTransferFrom(_msgSender(), address(this), shareAmount_);
 
-        pid_ = _coupon.mintTo(account_, amount_, debtAmount_);
+        debtAmount_ = _stableToken.buyback(address(this), shareAmount_);
+
+        pid_ = _coupon.mintTo(account_, shareAmount_, debtAmount_);
     }
 
     /**
@@ -289,4 +290,7 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
             _cdp.debt -= (grantAmount_ - _cdp.fee);
         }
     }
+
+    // TODO
+    // function buybackCouponWithPairAnnihilation() external {}
 }

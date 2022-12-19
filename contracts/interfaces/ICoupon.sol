@@ -5,7 +5,7 @@ pragma solidity 0.8.9;
 interface ICoupon {
     //============ Params ============//
 
-    struct ShareGrantPosition {
+    struct PositionDiscountCoupon {
         uint256 share;
         uint256 grant;
         uint256 fee; // as NIS
@@ -52,10 +52,14 @@ interface ICoupon {
 
     function unpause() external;
 
-    //============ SGP Operations ============//
+    //============ View Functions ============//
+
+    function pdc(uint256 id_) external view returns (PositionDiscountCoupon memory);
+
+    //============ PDC Operations ============//
 
     /**
-     * @notice Opens a SGP position.
+     * @notice Opens a PDC position.
      */
     function mintTo(
         address toAccount_,
@@ -64,11 +68,11 @@ interface ICoupon {
     ) external returns (uint256 id_);
 
     /**
-     * @notice Closes the `id_` SGP position.
+     * @notice Closes the `id_` PDC position.
      */
-    function burn(uint256 id_)
-        external
-        returns (uint256 shareAmount_, uint256 grantAmount_);
+    function burn(
+        uint256 id_
+    ) external returns (uint256 shareAmount_, uint256 grantAmount_);
 
     /**
      * @notice Update fee.

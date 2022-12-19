@@ -36,11 +36,12 @@ contract Coupon is
 
     uint256 private constant _DENOMINATOR = 10000;
 
+    // fee
     address internal _feeTo;
     uint256 internal _feeRatio; // (_feeRatio / _DENOMINATOR) // stability fee
 
     // CDP
-    mapping(uint256 => ShareGrantPosition) public sgps;
+    mapping(uint256 => PositionDiscountCoupon) internal _pdcs;
     uint256 public id;
     uint256 public totalShare;
     uint256 public totalGrant;
@@ -48,10 +49,10 @@ contract Coupon is
 
     //============ Modifiers ============//
 
-    modifier onlySgpApprovedOrOwner(address msgSender, uint256 id_) {
+    modifier onlyPdcApprovedOrOwner(address msgSender, uint256 id_) {
         require(
             _isApprovedOrOwner(msgSender, id_),
-            "Coupon::onlySgpApprovedOrOwner: Not a valid caller."
+            "Coupon::onlyPdcApprovedOrOwner: Not a valid caller."
         );
         _;
     }
@@ -92,10 +93,21 @@ contract Coupon is
         _unpause();
     }
 
-    //============ SGP Operations ============//
+    //============ View Functions ============//
+
+    function pdc(uint256 id_) public view returns (PositionDiscountCoupon memory) {
+        PositionDiscountCoupon memory _pdc = _pdcs[id_];
+        _pdc.fee =
+            (_pdc.grant * (block.timestamp - _pdc.latestUpdate) * _feeRatio) /
+            (_DENOMINATOR * 365 * 24 * 60 * 60);
+
+        return _pdc;
+    }
+
+    //============ PDC Operations ============//
 
     /**
-     * @notice Opens a SGP position.
+     * @notice Opens a PDC position.
      */
     function mintTo(
         address toAccount_,
@@ -112,36 +124,38 @@ contract Coupon is
         _update(id_);
 
         // deposit
-        ShareGrantPosition storage _sgp = sgps[id_];
-        _sgp.share += shareAmount_;
+        PositionDiscountCoupon storage _pdc = _pdcs[id_];
+        _pdc.share += shareAmount_;
         totalShare += shareAmount_;
         emit Deposit(msgSender, id_, shareAmount_);
 
         // borrow
-        _sgp.grant += grantAmount_;
+        _pdc.grant += grantAmount_;
         totalGrant += grantAmount_;
         ISIN(address(_grantToken)).mintTo(address(this), grantAmount_);
         emit Borrow(msgSender, id_, grantAmount_);
     }
 
     /**
-     * @notice Closes the `id_` SGP position.
+     * @notice Closes the `id_` PDC position.
      */
-    function burn(uint256 id_)
+    function burn(
+        uint256 id_
+    )
         external
         virtual
         whenNotPaused
-        onlySgpApprovedOrOwner(_msgSender(), id_)
+        onlyPdcApprovedOrOwner(_msgSender(), id_)
         returns (uint256 shareAmount_, uint256 grantAmount_)
     {
         address msgSender = _msgSender();
-        ShareGrantPosition storage _sgp = sgps[id_];
-        uint256 _feeAmount = _sgp.fee;
+        PositionDiscountCoupon storage _pdc = _pdcs[id_];
+        uint256 _feeAmount = _pdc.fee;
 
-        shareAmount_ = _sgp.share;
+        shareAmount_ = _pdc.share;
         grantAmount_ = _feeTo != address(0)
-            ? _sgp.grant - _feeAmount
-            : _sgp.grant;
+            ? _pdc.grant - _feeAmount
+            : _pdc.grant;
 
         // repay
         ISIN(address(_grantToken)).burnFrom(
@@ -158,7 +172,7 @@ contract Coupon is
 
         // close
         _burn(id_);
-        delete sgps[id_];
+        delete _pdcs[id_];
         emit Close(msgSender, id_);
     }
 
@@ -175,22 +189,19 @@ contract Coupon is
      * @dev Updates fee and timestamp.
      */
     function _update(uint256 id_) internal returns (uint256 additionalFee) {
-        ShareGrantPosition storage _sgp = sgps[id_];
+        PositionDiscountCoupon storage _pdc = _pdcs[id_];
 
-        uint256 prevTimestamp = _sgp.latestUpdate;
-        uint256 currTimestamp = block.timestamp;
-        uint256 prevFee = _sgp.fee;
-        uint256 currFee;
+        uint256 prevTimestamp = _pdc.latestUpdate;
+        uint256 prevFee = _pdc.fee;
 
         additionalFee =
-            (_sgp.grant * (currTimestamp - prevTimestamp) * _feeRatio) /
+            (_pdc.grant * (block.timestamp - prevTimestamp) * _feeRatio) /
             (_DENOMINATOR * 365 * 24 * 60 * 60);
-        _sgp.fee += additionalFee;
+        _pdc.fee += additionalFee;
         totalFee += additionalFee;
 
-        _sgp.latestUpdate = currTimestamp;
-        currFee = _sgp.fee;
+        _pdc.latestUpdate = block.timestamp;
 
-        emit Update(id_, prevFee, currFee, prevTimestamp, currTimestamp);
+        emit Update(id_, prevFee, _pdc.fee, prevTimestamp, block.timestamp);
     }
 }
