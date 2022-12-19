@@ -62,12 +62,23 @@ async function approveFOX() {
     }
 }
 
-async function getLtv(id) {
-    process.stdout.write("[FoxFarm] Get current LTV");
-    const ltv = await contract.foxFarm.currentLTV(id);
-    console.log(" - complete:\t", ltv / 100, "%");
+async function approveCoupon() {
+    let txRes;
 
-    return ltv;
+    process.stdout.write("[Coupon] Check allowance");
+    allowance = await contract.coupon.isApprovedForAll(signer.user.address, contract.foxFarm.address);
+    console.log(" - complete:\t", allowance);
+
+    if (!allowance) {
+        process.stdout.write("[Coupon] Set approval for all");
+        txRes = await contract.coupon.connect(signer.user).setApprovalForAll(contract.foxFarm.address, true);
+        await txRes.wait();
+        console.log(" - complete");
+
+        process.stdout.write("[Coupon] Check allowance");
+        allowance = await contract.coupon.isApprovedForAll(signer.user.address, contract.foxFarm.address);
+        console.log(" - complete:\t", allowance);
+    }
 }
 
 async function getCdp(id) {
@@ -79,27 +90,19 @@ async function getCdp(id) {
     console.log("\tfee:\t\t", cdp.fee / (10 ** 18));
 }
 
-async function getDefaultValues(account, id) {
-    process.stdout.write("[Gateway] Get default values");
-    const res = await contract.gateway.defaultValuesBuyback(account, id);
+async function getPdc(id) {
+    process.stdout.write("[Coupon] Get current PDC info");
+    const pdc = await contract.coupon.pdc(id);
     console.log(" - complete:");
-    console.log("\tshare:\t\t", res.shareAmount_ / (10 ** 18));
-    console.log("\tcollateral:\t", res.collateralAmount_ / (10 ** 18));
-    console.log("\tltv:\t\t", res.ltv_ / 100, "%");
+    console.log("\tshare:\t\t", pdc.share / (10 ** 18));
+    console.log("\tgrant:\t\t", pdc.grant / (10 ** 18));
+    console.log("\tfee:\t\t", pdc.fee / (10 ** 18));
 }
 
 async function getSurplusBuybackamount() {
     process.stdout.write("[FOX] Get surplus buyback amount");
     const debtAmount = await contract.fox.surplusBuybackAmount();
     console.log(" - complete:\t", debtAmount / (10 ** 18));
-}
-
-async function getLtvRange(id, stableAmount) {
-    process.stdout.write("[Gateway] Get LTV range");
-    const res = await contract.gateway.ltvRangeWhenBuyback(id, stableAmount);
-    console.log(" - complete:");
-    console.log("\tupperBound:\t", res.upperBound_ / 100, "%");
-    console.log("\tlowerBound:\t", res.lowerBound_ / 100, "%");
 }
 
 async function getShareAmountRangeWhenBuyback(account, id) {
@@ -110,20 +113,23 @@ async function getShareAmountRangeWhenBuyback(account, id) {
     console.log("\tlowerBound:\t", res.lowerBound_ / (10 ** 18));
 }
 
-async function getBuybackAmount(id, shareAmount, ltv) {
-    process.stdout.write("[Gateway] Get collateral amount");
-    const collateralAmount = await contract.gateway.exchangedCollateralAmountFromShareToLtv(id, shareAmount, ltv);
-    console.log(" - complete:\t", collateralAmount / (10 ** 18));
-
-    return collateralAmount;
-}
-
-async function buyback(account, id, shareAmount, ltv) {
+async function buybackCoupon(account, shareAmount) {
     let txRes;
 
-    process.stdout.write("[FoxFarm] Buyback");
-    txRes = await contract.foxFarm.connect(signer.user).buyback(
-        account, id, shareAmount, ltv
+    process.stdout.write("[FoxFarm] Buyback Coupon");
+    txRes = await contract.foxFarm.connect(signer.user).buybackCoupon(
+        account, shareAmount
+    );
+    await txRes.wait();
+    console.log(" - complete");
+}
+
+async function pairAnnihilation(cid, pid) {
+    let txRes;
+
+    process.stdout.write("[FoxFarm] Pair Annihilation");
+    txRes = await contract.foxFarm.connect(signer.user).pairAnnihilation(
+        cid, pid
     );
     await txRes.wait();
     console.log(" - complete");
@@ -142,13 +148,10 @@ async function main() {
     console.log("\n<Approve FOX>");
     await approveFOX();
 
-    const cid = BigInt(0);
+    console.log("\n<Approve Coupon>");
+    await approveCoupon();
 
-    console.log("\nGet default values");
-    await getDefaultValues(
-        signer.user.address,
-        cid
-    );
+    const cid = BigInt(0);
 
     console.log("\n<Get trust level>");
     await getTrustLevel();
@@ -156,20 +159,7 @@ async function main() {
     console.log("\n<Get surplus buyback amount>");
     await getSurplusBuybackamount();
 
-    console.log("\n<Get current LTV>");
-    await getLtv(cid);
-
-    console.log("\n<Get current CDP info>");
-    await getCdp(cid);
-
     const shareAmount = BigInt(300 * (10 ** 18));
-    const ltv = BigInt(38 * 100);
-
-    console.log("\n<Get LTV range>");
-    await getLtvRange(
-        cid,
-        shareAmount
-    );
 
     console.log("\n<Get FOXS range>");
     await getShareAmountRangeWhenBuyback(
@@ -177,39 +167,42 @@ async function main() {
         cid
     );
 
-    // Buyback
-    console.log("\n<Expected buyback amount>");
-    await getBuybackAmount(
-        cid,
-        shareAmount,
-        ltv
-    );
+    // // Coupon
+    // console.log("\n<Before: Balances>");
+    // await balances();
 
-    console.log("\n<Before: Get current LTV>");
-    await getLtv(cid);
+    // console.log("\n<Coupon>");
+    // await buybackCoupon(
+    //     signer.user.address,
+    //     shareAmount
+    // );
+
+    // console.log("\n<After: Balances>");
+    // await balances();
+
+    const pid = BigInt(0);
+
+    console.log("\n<After: Get current PDC info>");
+    await getPdc(pid);
+
+    // Annihilation
+    console.log("\n<Before: Get current CDP info>");
+    await getCdp(cid);
+
+    console.log("\n<Before: Get current PDC info>");
+    await getPdc(pid);
+
+    console.log("\n<Annihilation>");
+    await pairAnnihilation(
+        cid,
+        pid
+    );
 
     console.log("\n<Before: Get current CDP info>");
     await getCdp(cid);
 
-    console.log("\n<Before: Balances>");
-    await balances();
-
-    console.log("\n<Buyback>");
-    await buyback(
-        signer.user.address,
-        cid,
-        shareAmount,
-        ltv
-    );
-
-    console.log("\n<After: Get current LTV>");
-    await getLtv(cid);
-
-    console.log("\n<After: Get current CDP info>");
-    await getCdp(cid);
-
-    console.log("\n<After: Balances>");
-    await balances();
+    console.log("\n<Before: Get current PDC info>");
+    await getPdc(pid);
 }
 
 // run

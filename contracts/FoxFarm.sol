@@ -266,7 +266,6 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         returns (uint256 pid_, uint256 debtAmount_)
     {
         _shareToken.safeTransferFrom(_msgSender(), address(this), shareAmount_);
-
         debtAmount_ = _stableToken.buyback(address(this), shareAmount_);
 
         pid_ = _coupon.mintTo(account_, shareAmount_, debtAmount_);
@@ -279,15 +278,25 @@ contract FoxFarm is IFoxFarm, CDP, Nonzero {
         uint256 cid_,
         uint256 pid_
     ) external updateIdFirst(cid_) whenNotPaused {
-        (, uint256 grantAmount_) = _coupon.burn(pid_);
+        (, uint256 grantAmount_) = _coupon.burn(pid_); // includes _update(pid_);
 
         CollateralizedDebtPosition storage _cdp = _cdps[cid_];
 
         if (_cdp.fee >= grantAmount_) {
             _cdp.fee -= grantAmount_;
+            totalFee -= _cdp.fee;
+        } else if (_cdp.debt + _cdp.fee < grantAmount_) {
+            totalDebt -= _cdp.debt;
+            _cdp.debt = 0; // -= _cdp.debt;
+
+            totalFee -= _cdp.fee;
+            _cdp.fee = 0; // -= _cdp.fee;
         } else {
-            _cdp.fee = 0;
             _cdp.debt -= (grantAmount_ - _cdp.fee);
+            totalDebt -= (grantAmount_ - _cdp.fee);
+
+            totalFee -= _cdp.fee;
+            _cdp.fee = 0; // -= _cdp.fee;
         }
     }
 

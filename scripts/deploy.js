@@ -108,12 +108,7 @@ async function init() {
     // await txRes.wait();
     // console.log(" - complete");
 
-    //============ Ownership ============//
-
-    // process.stdout.write("[SIN]\t\tChange SIN's owner to FoxFarm");
-    // txRes = await contract.sin.connect(signer.owner).transferOwnership(contract.foxFarm.address);
-    // await txRes.wait();
-    // console.log(" - complete");
+    //============ SIN & NIS ============//
 
     process.stdout.write("[SIN]\t\tSet SIN's whitelist - FoxFarm");
     txRes = await contract.sin.connect(signer.owner).addAllowlist(contract.foxFarm.address);
@@ -125,16 +120,24 @@ async function init() {
     await txRes.wait();
     console.log(" - complete");
 
-    // process.stdout.write("[NIS] Change NIS's owner to Coupon");
-    // console.log(" - complete");
-
-    // process.stdout.write("[Coupon] Change Coupon's owner to FoxFarm");
-    // console.log(" - complete");
+    process.stdout.write("[NIS]\t\tSet NIS's whitelist - Coupon");
+    txRes = await contract.nis.connect(signer.owner).addAllowlist(contract.coupon.address);
+    await txRes.wait();
+    console.log(" - complete");
 
     //============ FOX ============//
 
     process.stdout.write("[FOX]\t\tSubmit FoxFarm");
     txRes = await contract.fox.connect(signer.owner).initialize(
+        contract.foxFarm.address
+    );
+    await txRes.wait();
+    console.log(" - complete");
+
+    //============ Coupon ============//
+
+    process.stdout.write("[Coupon]\tTransfer Ownership");
+    txRes = await contract.coupon.connect(signer.owner).transferOwnership(
         contract.foxFarm.address
     );
     await txRes.wait();

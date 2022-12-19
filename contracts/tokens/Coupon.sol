@@ -95,7 +95,9 @@ contract Coupon is
 
     //============ View Functions ============//
 
-    function pdc(uint256 id_) public view returns (PositionDiscountCoupon memory) {
+    function pdc(
+        uint256 id_
+    ) public view returns (PositionDiscountCoupon memory) {
         PositionDiscountCoupon memory _pdc = _pdcs[id_];
         _pdc.fee =
             (_pdc.grant * (block.timestamp - _pdc.latestUpdate) * _feeRatio) /
@@ -148,6 +150,8 @@ contract Coupon is
         onlyPdcApprovedOrOwner(_msgSender(), id_)
         returns (uint256 shareAmount_, uint256 grantAmount_)
     {
+        _update(id_);
+
         address msgSender = _msgSender();
         PositionDiscountCoupon storage _pdc = _pdcs[id_];
         uint256 _feeAmount = _pdc.fee;

@@ -55,6 +55,10 @@ async function attach() {
     contract.foxFarm = await ethers.getContractAt("FoxFarm", address.FoxFarm);
     console.log(" - complete");
 
+    process.stdout.write("Attach Coupon");
+    contract.coupon = await ethers.getContractAt("Coupon", address.Coupon);
+    console.log(" - complete");
+
     process.stdout.write("Attach Gateway");
     contract.gateway = await ethers.getContractAt("FoxFarmGateway", address.Gateway);
     console.log(" - complete");

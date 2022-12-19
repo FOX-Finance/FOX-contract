@@ -43,13 +43,14 @@ Solve Stablecoin's trilemma
 
 <!--
 # Proof-of-Work
+- [ ] Get one's CDP list (off-chain)
 - [x] Moralis for oracle
 - [x] Check additional conditions: total ratio, cdp ratio
 - [x] Oracle feeder
 - [x] WARNING or Restriction when protocol trust touches 100% collateral backing level
 - [x] CDP update first (modifier)
 - [x] FoxFarm Gateway for view functions
-- [ ] Refactoring interfaces
+- [x] Refactoring interfaces
 - [ ] `feeTo` -> share fees to FOXS holders
 - [x] PSM: Stablecoins -> DAI: 0.1%, DAI -> Stablecoins: 1.0%
 - [ ] "Swap is more cheaper" message
