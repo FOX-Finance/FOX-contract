@@ -45,7 +45,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     uint256 internal _liquidationBufferRatio; // (_liquidationPenaltyRatio / _DENOMINATOR) // TODO: default value
 
     // CDP
-    mapping(uint256 => CollateralizedDebtPosition) public _cdps;
+    mapping(uint256 => CollateralizedDebtPosition) internal _cdps;
     uint256 public id;
     uint256 public totalCollateral;
     uint256 public totalDebt;
@@ -210,7 +210,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
 
     /// @dev multiplied by _DENOMINATOR.
     function globalLTV() public view virtual returns (uint256 ltv_) {
-        ltv_ = calculatedLtv(totalCollateral, totalDebt);
+        ltv_ = calculatedLtv(totalCollateral, totalDebt + totalFee);
     }
 
     /// @dev multiplied by _DENOMINATOR.
@@ -251,7 +251,10 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     function globalHealthFactor() public view virtual returns (uint256 health) {
         if (totalCollateral != 0 && _collateralPrice != 0 && maxLTV != 0) {
             health =
-                (totalDebt * _DENOMINATOR * _DENOMINATOR * _DENOMINATOR) /
+                ((totalDebt + totalFee) *
+                    _DENOMINATOR *
+                    _DENOMINATOR *
+                    _DENOMINATOR) /
                 (totalCollateral * _collateralPrice * maxLTV);
         }
     }
@@ -267,19 +270,6 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
             (_DENOMINATOR * 365 * 24 * 60 * 60);
 
         return _cdp;
-    }
-
-    function cdpInfo(
-        uint256 id_
-    )
-        external
-        view
-        returns (uint256 collateralAmount_, uint256 ltv_, uint256 fee_)
-    {
-        CollateralizedDebtPosition memory _cdp = cdp(id_);
-        collateralAmount_ = _cdp.collateral;
-        ltv_ = currentLTV(id_);
-        fee_ = _cdp.fee;
     }
 
     /// @dev multiplied by _DENOMINATOR.
@@ -630,7 +620,8 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
                     account_,
                     (amount_ - _cdp.fee)
                 );
-                _cdp.fee = 0;
+                totalFee -= _cdp.fee;
+                _cdp.fee = 0; // -= _cdp.fee;
             }
         } else {
             _cdp.debt -= amount_;
