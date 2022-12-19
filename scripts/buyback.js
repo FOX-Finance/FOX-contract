@@ -1,5 +1,21 @@
 const { signer, contract, set, attach } = require('./set');
 
+async function balances() {
+    let balance;
+
+    process.stdout.write("[WETH] Check balance");
+    balance = await contract.weth.balanceOf(signer.user.address);
+    console.log(" - complete:\t", balance / (10 ** 18));
+
+    process.stdout.write("[FOXS] Check balance");
+    balance = await contract.foxs.balanceOf(signer.user.address);
+    console.log(" - complete:\t", balance / (10 ** 18));
+
+    process.stdout.write("[FOX] Check balance");
+    balance = await contract.fox.balanceOf(signer.user.address);
+    console.log(" - complete:\t\t", balance / (10 ** 18));
+}
+
 async function getTrustLevel() {
     process.stdout.write("[Fox] Get trust level");
     const trustLevel = await contract.fox.trustLevel();
@@ -46,77 +62,12 @@ async function approveFOX() {
     }
 }
 
-async function approveFOXS2() {
-    let txRes;
-    let allowance;
-
-    process.stdout.write("[FOXS] Check allowance");
-    allowance = await contract.foxs.allowance(signer.user2.address, contract.foxFarm.address);
-    console.log(" - complete:\t", allowance / (10 ** 18));
-
-    if (allowance == 0) {
-        process.stdout.write("[FOXS] Max approve");
-        txRes = await contract.foxs.connect(signer.user2).approveMax(contract.foxFarm.address);
-        await txRes.wait();
-        console.log(" - complete");
-
-        process.stdout.write("[FOXS] Check allowance");
-        allowance = await contract.foxs.allowance(signer.user2.address, contract.foxFarm.address);
-        console.log(" - complete:\t", allowance / (10 ** 18));
-    }
-}
-
-async function approveFOX2() {
-    let txRes;
-    let allowance;
-
-    process.stdout.write("[FOX] Check allowance");
-    allowance = await contract.fox.allowance(signer.user2.address, contract.foxFarm.address);
-    console.log(" - complete:\t", allowance / (10 ** 18));
-
-    if (allowance == 0) {
-        process.stdout.write("[FOX] Max approve");
-        txRes = await contract.fox.connect(signer.user2).approveMax(contract.foxFarm.address);
-        await txRes.wait();
-        console.log(" - complete");
-
-        process.stdout.write("[FOX] Check allowance");
-        allowance = await contract.fox.allowance(signer.user2.address, contract.foxFarm.address);
-        console.log(" - complete:\t", allowance / (10 ** 18));
-    }
-}
-
 async function getLtv(id) {
     process.stdout.write("[FoxFarm] Get current LTV");
     const ltv = await contract.foxFarm.currentLTV(id);
     console.log(" - complete:\t", ltv / 100, "%");
 
     return ltv;
-}
-
-async function getDefaultValues(account, id) {
-    process.stdout.write("[Gateway] Get default values");
-    const res = await contract.gateway.defaultValuesBuyback(account, id);
-    console.log(" - complete:");
-    console.log("\tshare:\t\t", res.shareAmount_ / (10 ** 18));
-    console.log("\tcollateral:\t", res.collateralAmount_ / (10 ** 18));
-    console.log("\tltv:\t\t", res.ltv_ / 100, "%");
-}
-
-async function getBuybackAmount(id, shareAmount, ltv) {
-    process.stdout.write("[Gateway] Get collateral amount");
-    const collateralAmount = await contract.gateway.exchangedCollateralAmountFromShareToLtv(id, shareAmount, ltv);
-    console.log(" - complete:\t", collateralAmount / (10 ** 18));
-
-    return collateralAmount;
-}
-
-async function getLtvRange(id, stableAmount) {
-    process.stdout.write("[Gateway] Get LTV range");
-    const res = await contract.gateway.ltvRangeWhenBuyback(id, stableAmount);
-    console.log(" - complete:");
-    console.log("\tupperBound:\t", res.upperBound_ / 100, "%");
-    console.log("\tlowerBound:\t", res.lowerBound_ / 100, "%");
 }
 
 async function getCdp(id) {
@@ -128,32 +79,54 @@ async function getCdp(id) {
     console.log("\tfee:\t\t", cdp.fee / (10 ** 18));
 }
 
-async function buybackRepayDebt(id, shareAmount) {
-    let txRes;
-
-    process.stdout.write("[FoxFarm] Buyback");
-    txRes = await contract.foxFarm.connect(signer.user2).buybackRepayDebt(
-        id, shareAmount
-    );
-    await txRes.wait();
-    console.log(" - complete");
-}
-
-async function buybackWithdrawCollateral(account, id, shareAmount, ltv) {
-    let txRes;
-
-    process.stdout.write("[FoxFarm] Buyback");
-    txRes = await contract.foxFarm.connect(signer.user).buybackWithdrawCollateral(
-        account, id, shareAmount, ltv
-    );
-    await txRes.wait();
-    console.log(" - complete");
+async function getDefaultValues(account, id) {
+    process.stdout.write("[Gateway] Get default values");
+    const res = await contract.gateway.defaultValuesBuyback(account, id);
+    console.log(" - complete:");
+    console.log("\tshare:\t\t", res.shareAmount_ / (10 ** 18));
+    console.log("\tcollateral:\t", res.collateralAmount_ / (10 ** 18));
+    console.log("\tltv:\t\t", res.ltv_ / 100, "%");
 }
 
 async function getSurplusBuybackamount() {
     process.stdout.write("[FOX] Get surplus buyback amount");
     const debtAmount = await contract.fox.surplusBuybackAmount();
     console.log(" - complete:\t", debtAmount / (10 ** 18));
+}
+
+async function getLtvRange(id, stableAmount) {
+    process.stdout.write("[Gateway] Get LTV range");
+    const res = await contract.gateway.ltvRangeWhenBuyback(id, stableAmount);
+    console.log(" - complete:");
+    console.log("\tupperBound:\t", res.upperBound_ / 100, "%");
+    console.log("\tlowerBound:\t", res.lowerBound_ / 100, "%");
+}
+
+async function getShareAmountRangeWhenBuyback(account, id) {
+    process.stdout.write("[Gateway] Get shareAmountRangeWhenBuyback");
+    const res = await contract.gateway.shareAmountRangeWhenBuyback(account, id);
+    console.log(" - complete:");
+    console.log("\tupperBound:\t", res.upperBound_ / (10 ** 18));
+    console.log("\tlowerBound:\t", res.lowerBound_ / (10 ** 18));
+}
+
+async function getBuybackAmount(id, shareAmount, ltv) {
+    process.stdout.write("[Gateway] Get collateral amount");
+    const collateralAmount = await contract.gateway.exchangedCollateralAmountFromShareToLtv(id, shareAmount, ltv);
+    console.log(" - complete:\t", collateralAmount / (10 ** 18));
+
+    return collateralAmount;
+}
+
+async function buyback(account, id, shareAmount, ltv) {
+    let txRes;
+
+    process.stdout.write("[FoxFarm] Buyback");
+    txRes = await contract.foxFarm.connect(signer.user).buyback(
+        account, id, shareAmount, ltv
+    );
+    await txRes.wait();
+    console.log(" - complete");
 }
 
 async function main() {
@@ -169,23 +142,11 @@ async function main() {
     console.log("\n<Approve FOX>");
     await approveFOX();
 
-    console.log("\n<Approve FOXS2>");
-    await approveFOXS2();
-
-    console.log("\n<Approve FOX2>");
-    await approveFOX2();
-
     const cid = BigInt(0);
 
-    console.log("\nGet default values from owner");
+    console.log("\nGet default values");
     await getDefaultValues(
         signer.user.address,
-        cid
-    );
-
-    console.log("\nGet default values from other");
-    await getDefaultValues(
-        signer.user2.address,
         cid
     );
 
@@ -201,73 +162,54 @@ async function main() {
     console.log("\n<Get current CDP info>");
     await getCdp(cid);
 
-    process.exit(1);
+    const shareAmount = BigInt(300 * (10 ** 18));
+    const ltv = BigInt(38 * 100);
 
-    // 1. Buyback from other user
     console.log("\n<Get LTV range>");
     await getLtvRange(
-        BigInt(0),
-        BigInt(0.1 * (10 ** 18)),
+        cid,
+        shareAmount
     );
 
+    console.log();
+    await getShareAmountRangeWhenBuyback(
+        signer.user.address,
+        cid
+    );
+
+    // Buyback
+    console.log("\n<Expected buyback amount>");
+    await getBuybackAmount(
+        cid,
+        shareAmount,
+        ltv
+    );
+
+    console.log("\n<Before: Get current LTV>");
+    await getLtv(cid);
+
+    console.log("\n<Before: Get current CDP info>");
+    await getCdp(cid);
+
+    console.log("\n<Before: Balances>");
+    await balances();
+
     console.log("\n<Buyback: repay debt from other user>");
-    await buybackRepayDebt(
-        BigInt(0),
-        BigInt(0.1 * (10 ** 18))
+    await buyback(
+        signer.user.address,
+        cid,
+        shareAmount,
+        ltv
     );
 
     console.log("\n<After: Get current LTV>");
-    ltv = await getLtv(
-        BigInt(0)
-    );
+    await getLtv(cid);
 
     console.log("\n<After: Get current CDP info>");
-    await getCdp(BigInt(0));
+    await getCdp(cid);
 
-    // // 2. Buyback from owner
-    // console.log("\n<Before: Get current LTV>");
-    // ltv = await getLtv(
-    //     BigInt(0)
-    // );
-
-    // console.log("\n<Before: Get current CDP info>");
-    // await getCdp(BigInt(0));
-
-    // console.log("\n<Get LTV range>");
-    // await getLtvRange(
-    //     BigInt(0),
-    //     BigInt(0.3 * (10 ** 18)),
-    // );
-
-    // console.log("\n<Get buyback amount>");
-    // const collateralAmount = await getBuybackAmount(
-    //     BigInt(0),
-    //     BigInt(0.3 * (10 ** 18)),
-    //     ltv
-    // );
-
-    // console.log("\n<Get buyback amount w/ different LTV>");
-    // const collateralAmountWithLtv = await getBuybackAmount(
-    //     BigInt(0),
-    //     BigInt(0.3 * (10 ** 18)),
-    //     BigInt(38 * 100)
-    // );
-
-    // console.log("\n<Buyback: repay debt from owner>");
-    // await buybackWithdrawCollateral(
-    //     signer.user.address,
-    //     BigInt(0),
-    //     BigInt(0.3 * (10 ** 18)),
-    //     BigInt(38 * 100)
-    // );
-
-    // console.log("\n<After: Get current LTV>");
-    // await getLtv(
-    //     BigInt(0)
-    // );
-
-    // console.log("\n<After: Get current CDP info>");
-    // await getCdp(BigInt(0));
+    console.log("\n<After: Balances>");
+    await balances();
 }
 
 // run

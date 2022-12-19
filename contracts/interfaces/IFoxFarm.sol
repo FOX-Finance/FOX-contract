@@ -26,22 +26,19 @@ interface IFoxFarm is ICDP {
         uint256 ltv_
     ) external returns (uint256 shareAmount_, uint256 bonusAmount_);
 
-    function buybackRepayDebt(uint256 id_, uint256 amount_)
-        external
-        returns (uint256 debtAmount_);
-
-    function buybackWithdrawCollateral(
+    function buyback(
         address account_,
         uint256 id_,
-        uint256 amount_,
+        uint256 shareAmount_,
         uint256 ltv_
     ) external returns (uint256 debtAmount_);
 
     //============ Coupon Operations ============//
 
-    function buybackCoupon(address account_, uint256 amount_)
-        external
-        returns (uint256 cid_, uint256 debtAmount_);
+    function buybackCoupon(
+        address account_,
+        uint256 amount_
+    ) external returns (uint256 cid_, uint256 debtAmount_);
 
     function pairAnnihilation(uint256 id_, uint256 cid_) external;
 }
