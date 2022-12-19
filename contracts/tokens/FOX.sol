@@ -131,10 +131,10 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         _updateOracleFeeder(newOracleFeeder);
     }
 
-    function updateStablePrice(uint256 newStablePrice, uint256 confidence)
-        external
-        onlyOracleFeeder
-    {
+    function updateStablePrice(
+        uint256 newStablePrice,
+        uint256 confidence
+    ) external onlyOracleFeeder {
         // TODO: confidence interval, delta -> pause
 
         uint256 prevPrice = _stablePrice;
@@ -155,10 +155,10 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         _updateTrustLevel();
     }
 
-    function updateSharePrice(uint256 newSharePrice, uint256 confidence)
-        external
-        onlyOracleFeeder
-    {
+    function updateSharePrice(
+        uint256 newSharePrice,
+        uint256 confidence
+    ) external onlyOracleFeeder {
         // TODO: confidence interval, delta -> pause
 
         uint256 prevPrice = _sharePrice;
@@ -229,103 +229,83 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
 
     //============ View Functions ============//
 
-    function requiredStableAmountFromDebt(uint256 debtAmount_)
-        public
-        view
-        returns (uint256 stableAmount_)
-    {
+    function requiredStableAmountFromDebt(
+        uint256 debtAmount_
+    ) public view returns (uint256 stableAmount_) {
         stableAmount_ =
             (debtAmount_ * _DENOMINATOR) /
             (_DENOMINATOR - trustLevel);
     }
 
     /// @dev Uses to `repay()` in `close()`. Must consider burn fee.
-    function requiredStableAmountFromDebtWithBurnFee(uint256 debtAmount_)
-        public
-        view
-        returns (uint256 stableAmount_)
-    {
+    function requiredStableAmountFromDebtWithBurnFee(
+        uint256 debtAmount_
+    ) public view returns (uint256 stableAmount_) {
         stableAmount_ =
             (debtAmount_ * _DENOMINATOR * _DENOMINATOR) /
             ((_DENOMINATOR - trustLevel) * (_DENOMINATOR - burnFeeRatio));
     }
 
-    function requiredShareAmountFromDebt(uint256 debtAmount_)
-        public
-        view
-        returns (uint256 shareAmount_)
-    {
+    function requiredShareAmountFromDebt(
+        uint256 debtAmount_
+    ) public view returns (uint256 shareAmount_) {
         shareAmount_ =
             (debtAmount_ * trustLevel * _DENOMINATOR) /
             ((_DENOMINATOR - trustLevel) * _sharePrice);
     }
 
-    function requiredShareAmountFromStable(uint256 stableAmount_)
-        public
-        view
-        returns (uint256 shareAmount_)
-    {
+    function requiredShareAmountFromStable(
+        uint256 stableAmount_
+    ) public view returns (uint256 shareAmount_) {
         shareAmount_ = (stableAmount_ * trustLevel) / (_sharePrice);
     }
 
     /// @dev Uses to `borrow()`. Must consider mint fee.
-    function requiredShareAmountFromStableWithMintFee(uint256 stableAmount_)
-        public
-        view
-        returns (uint256 shareAmount_)
-    {
+    function requiredShareAmountFromStableWithMintFee(
+        uint256 stableAmount_
+    ) public view returns (uint256 shareAmount_) {
         shareAmount_ =
             (stableAmount_ * _DENOMINATOR * trustLevel) /
             ((_DENOMINATOR - mintFeeRatio) * _sharePrice);
     }
 
-    function requiredShareAmountFromStableWithBurnFee(uint256 stableAmount_)
-        public
-        view
-        returns (uint256 shareAmount_)
-    {
+    function requiredShareAmountFromStableWithBurnFee(
+        uint256 stableAmount_
+    ) public view returns (uint256 shareAmount_) {
         uint256 burnFee_ = (stableAmount_ * burnFeeRatio) / _DENOMINATOR;
         shareAmount_ =
             ((stableAmount_ - burnFee_) * _DENOMINATOR * trustLevel) /
             (_DENOMINATOR * _sharePrice);
     }
 
-    function requiredDebtAmountFromShare(uint256 shareAmount_)
-        public
-        view
-        returns (uint256 debtAmount_)
-    {
+    function requiredDebtAmountFromShare(
+        uint256 shareAmount_
+    ) public view returns (uint256 debtAmount_) {
         debtAmount_ =
             ((_DENOMINATOR - trustLevel) * shareAmount_ * _sharePrice) /
             (trustLevel * _DENOMINATOR);
     }
 
-    function requiredDebtAmountFromStable(uint256 stableAmount_)
-        public
-        view
-        returns (uint256 debtAmount_)
-    {
+    function requiredDebtAmountFromStable(
+        uint256 stableAmount_
+    ) public view returns (uint256 debtAmount_) {
         debtAmount_ =
             (stableAmount_ * (_DENOMINATOR - trustLevel)) /
             (_DENOMINATOR);
     }
 
     /// @dev Uses to `borrow()`. Must consider mint fee.
-    function requiredDebtAmountFromStableWithMintFee(uint256 stableAmount_)
-        public
-        view
-        returns (uint256 debtAmount_)
-    {
+    function requiredDebtAmountFromStableWithMintFee(
+        uint256 stableAmount_
+    ) public view returns (uint256 debtAmount_) {
         debtAmount_ =
             (stableAmount_ * (_DENOMINATOR - trustLevel)) /
             (_DENOMINATOR - mintFeeRatio);
     }
 
-    function requiredDebtAmountFromStableWithBurnFee(uint256 stableAmount_)
-        public
-        view
-        returns (uint256 debtAmount_)
-    {
+    function requiredDebtAmountFromStableWithBurnFee(
+        uint256 stableAmount_
+    ) public view returns (uint256 debtAmount_) {
         uint256 burnFee_ = (stableAmount_ * burnFeeRatio) / _DENOMINATOR;
         debtAmount_ =
             ((stableAmount_ - burnFee_) * (_DENOMINATOR - trustLevel)) /
@@ -334,11 +314,10 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
 
     //============ View Functions (Mint) ============//
 
-    function expectedMintAmount(uint256 debtAmount_, uint256 shareAmount_)
-        public
-        view
-        returns (uint256 stableAmount_)
-    {
+    function expectedMintAmount(
+        uint256 debtAmount_,
+        uint256 shareAmount_
+    ) public view returns (uint256 stableAmount_) {
         // calculate min amount to mint
         uint256 _requiredDebtAmount;
         uint256 _requiredShareAmount = requiredShareAmountFromDebt(debtAmount_);
@@ -370,23 +349,19 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
 
     //============ View Functions (Redeem) ============//
 
-    function expectedRedeemAmount(uint256 stableAmount_)
-        public
-        view
-        returns (uint256 debtAmount_, uint256 shareAmount_)
-    {
+    function expectedRedeemAmount(
+        uint256 stableAmount_
+    ) public view returns (uint256 debtAmount_, uint256 shareAmount_) {
         debtAmount_ = requiredDebtAmountFromStable(stableAmount_);
         shareAmount_ = requiredShareAmountFromStable(stableAmount_);
     }
 
-    function expectedRedeemAmountWithBurnFee(uint256 stableAmount_)
+    function expectedRedeemAmountWithBurnFee(
+        uint256 stableAmount_
+    )
         public
         view
-        returns (
-            uint256 debtAmount_,
-            uint256 shareAmount_,
-            uint256 burnFee_
-        )
+        returns (uint256 debtAmount_, uint256 shareAmount_, uint256 burnFee_)
     {
         burnFee_ = (stableAmount_ * burnFeeRatio) / _DENOMINATOR;
         (debtAmount_, shareAmount_) = expectedRedeemAmount(
@@ -408,19 +383,15 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
             _debtToken.balanceOf(address(this));
     }
 
-    function exchangedShareAmountFromDebt(uint256 debtAmount_)
-        public
-        view
-        returns (uint256 shareAmount_)
-    {
+    function exchangedShareAmountFromDebt(
+        uint256 debtAmount_
+    ) public view returns (uint256 shareAmount_) {
         shareAmount_ = (debtAmount_ * _DENOMINATOR) / (_sharePrice);
     }
 
-    function exchangedShareAmountFromDebtWithBonus(uint256 debtAmount_)
-        public
-        view
-        returns (uint256 shareAmount_)
-    {
+    function exchangedShareAmountFromDebtWithBonus(
+        uint256 debtAmount_
+    ) public view returns (uint256 shareAmount_) {
         shareAmount_ =
             (debtAmount_ * (_DENOMINATOR + bonusRatio)) /
             (_sharePrice);
@@ -436,11 +407,9 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
             _DENOMINATOR;
     }
 
-    function exchangedDebtAmountFromShare(uint256 shareAmount_)
-        public
-        view
-        returns (uint256 debtAmount_)
-    {
+    function exchangedDebtAmountFromShare(
+        uint256 shareAmount_
+    ) public view returns (uint256 debtAmount_) {
         debtAmount_ = (shareAmount_ * _sharePrice) / _DENOMINATOR;
     }
 
@@ -474,7 +443,10 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         _mint(toAccount_, stableAmount_);
     }
 
-    function redeem(address toAccount_, uint256 stableAmount_)
+    function redeem(
+        address toAccount_,
+        uint256 stableAmount_
+    )
         external
         whenNotPaused
         returns (uint256 debtAmount_, uint256 shareAmount_)
@@ -501,7 +473,10 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
 
     //============ Recollateralize & Buyback ============//
 
-    function recollateralize(address toAccount_, uint256 debtAmount_)
+    function recollateralize(
+        address toAccount_,
+        uint256 debtAmount_
+    )
         external
         whenNotPaused
         returns (uint256 shareAmount_, uint256 bonusAmount_)
@@ -530,11 +505,10 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
         );
     }
 
-    function buyback(address toAccount_, uint256 shareAmount_)
-        external
-        whenNotPaused
-        returns (uint256 debtAmount_)
-    {
+    function buyback(
+        address toAccount_,
+        uint256 shareAmount_
+    ) external whenNotPaused returns (uint256 debtAmount_) {
         // also checks recollateralizing condition
         uint256 _exchangedSurplusShareAmount = exchangedShareAmountFromDebt(
             surplusBuybackAmount()
@@ -565,11 +539,9 @@ contract FOX is IFOX, ERC20, Pausable, Ownable, Oracle, Interval, Nonzero {
     }
 
     // TODO: can get surplus FOXS
-    function skim(address toAccount_)
-        external
-        whenNotPaused
-        returns (uint256 shareAmount_)
-    {}
+    function skim(
+        address toAccount_
+    ) external whenNotPaused returns (uint256 shareAmount_) {}
 
     //============ ERC20-related Functions ============//
 
