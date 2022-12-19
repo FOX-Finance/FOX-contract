@@ -386,12 +386,11 @@ contract FoxFarmGateway is IFoxFarmGateway {
 
         upperBound_ = min(
             _collateralToken.balanceOf(account_),
-            (_DENOMINATOR *
-                _DENOMINATOR *
-                (_stableToken.shortfallRecollateralizeAmount() +
-                    (_cdp.debt + _cdp.fee))) /
-                (_foxFarm.collateralPrice() * ltv_) -
-                _cdp.collateral
+            _foxFarm.collateralAmountFromDebtWithLtv(
+                (_cdp.debt + _cdp.fee) +
+                    _stableToken.shortfallRecollateralizeAmount(),
+                ltv_
+            ) - _cdp.collateral
         );
 
         // lowerBound_ = 0;
@@ -480,16 +479,22 @@ contract FoxFarmGateway is IFoxFarmGateway {
 
     /// @dev 0 to surplus.
     function shareAmountRangeWhenBuyback(
+        address account_,
         uint256 id_
     ) public view returns (uint256 upperBound_, uint256 lowerBound_) {
         IFoxFarm.CollateralizedDebtPosition memory _cdp = _foxFarm.cdp(id_);
 
-        upperBound_ = _stableToken.exchangedShareAmountFromDebt(
-            _stableToken.surplusBuybackAmount()
+        upperBound_ = min(
+            _shareToken.balanceOf(account_),
+            _stableToken.exchangedShareAmountFromDebt(
+                _stableToken.surplusBuybackAmount()
+            )
         );
 
         // lowerBound_ = 0;
     }
+
+    // TODO (WIP)
 
     /// @dev for buyback
     function exchangedCollateralAmountFromShareToLtv(
