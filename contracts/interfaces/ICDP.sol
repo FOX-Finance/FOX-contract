@@ -137,13 +137,6 @@ interface ICDP {
         uint256 id_
     ) external view returns (CollateralizedDebtPosition memory);
 
-    function cdpInfo(
-        uint256 id_
-    )
-        external
-        view
-        returns (uint256 collateralAmount_, uint256 ltv_, uint256 fee_);
-
     function calculatedLtv(
         uint256 collateralAmount_,
         uint256 debtAmount_
