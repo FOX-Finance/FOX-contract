@@ -42,26 +42,6 @@ async function approveWETH() {
     }
 }
 
-async function approveWETH2() {
-    let txRes;
-    let allowance;
-
-    process.stdout.write("[WETH] Check allowance");
-    allowance = await contract.weth.allowance(signer.user2.address, contract.foxFarm.address);
-    console.log(" - complete:\t", allowance / (10 ** 18));
-
-    if (allowance == 0) {
-        process.stdout.write("[WETH] Max approve");
-        txRes = await contract.weth.connect(signer.user2).approveMax(contract.foxFarm.address);
-        await txRes.wait();
-        console.log(" - complete");
-
-        process.stdout.write("[WETH] Check allowance");
-        allowance = await contract.weth.allowance(signer.user2.address, contract.foxFarm.address);
-        console.log(" - complete:\t", allowance / (10 ** 18));
-    }
-}
-
 async function getLtv(id) {
     process.stdout.write("[FoxFarm] Get current LTV");
     const ltv = await contract.foxFarm.currentLTV(id);
@@ -139,9 +119,6 @@ async function main() {
     console.log("\n<Approve WETH>");
     await approveWETH();
 
-    console.log("\n<Approve WETH2>");
-    await approveWETH2();
-
     const cid = BigInt(0);
 
     console.log("\nGet default values");
@@ -163,7 +140,7 @@ async function main() {
     await getCdp(cid);
 
     const collateralAmount = BigInt(1000 * (10 ** 18));
-    const ltv = BigInt(30 * 100);
+    const ltv = BigInt(21 * 100);
 
     console.log("\n<Get LTV range>");
     await getLtvRange(

@@ -220,7 +220,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         if (id_ >= id) {
             return 0;
         } else {
-            CollateralizedDebtPosition memory _cdp = _cdps[id_];
+            CollateralizedDebtPosition memory _cdp = cdp(id_);
             ltv_ = calculatedLtv(_cdp.collateral, _cdp.debt + _cdp.fee);
         }
     }
@@ -229,7 +229,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     function healthFactor(
         uint256 id_
     ) public view virtual returns (uint256 health) {
-        CollateralizedDebtPosition memory _cdp = _cdps[id_];
+        CollateralizedDebtPosition memory _cdp = cdp(id_);
 
         if (_cdp.collateral == 0) {
             if (_cdp.debt == 0) {
@@ -260,8 +260,13 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
 
     function cdp(
         uint256 id_
-    ) external view returns (CollateralizedDebtPosition memory) {
-        return _cdps[id_];
+    ) public view returns (CollateralizedDebtPosition memory) {
+        CollateralizedDebtPosition memory _cdp = _cdps[id_];
+        _cdp.fee =
+            (_cdp.debt * (block.timestamp - _cdp.latestUpdate) * _feeRatio) /
+            (_DENOMINATOR * 365 * 24 * 60 * 60);
+
+        return _cdp;
     }
 
     function cdpInfo(
@@ -271,7 +276,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         view
         returns (uint256 collateralAmount_, uint256 ltv_, uint256 fee_)
     {
-        CollateralizedDebtPosition memory _cdp = _cdps[id_];
+        CollateralizedDebtPosition memory _cdp = cdp(id_);
         collateralAmount_ = _cdp.collateral;
         ltv_ = currentLTV(id_);
         fee_ = _cdp.fee;
@@ -326,7 +331,7 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
     function debtAmountRangeWhenLiquidate(
         uint256 id_
     ) public view returns (uint256 upperBound_, uint256 lowerBound_) {
-        CollateralizedDebtPosition memory _cdp = _cdps[id_];
+        CollateralizedDebtPosition memory _cdp = cdp(id_);
 
         upperBound_ =
             (((_DENOMINATOR * _DENOMINATOR * _cdp.debt) -
@@ -692,19 +697,16 @@ abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
         CollateralizedDebtPosition storage _cdp = _cdps[id_];
 
         uint256 prevTimestamp = _cdp.latestUpdate;
-        uint256 currTimestamp = block.timestamp;
         uint256 prevFee = _cdp.fee;
-        uint256 currFee;
 
         additionalFee =
-            (_cdp.debt * (currTimestamp - prevTimestamp) * _feeRatio) /
+            (_cdp.debt * (block.timestamp - prevTimestamp) * _feeRatio) /
             (_DENOMINATOR * 365 * 24 * 60 * 60);
         _cdp.fee += additionalFee;
         totalFee += additionalFee;
 
-        _cdp.latestUpdate = currTimestamp;
-        currFee = _cdp.fee;
+        _cdp.latestUpdate = block.timestamp;
 
-        emit Update(id_, prevFee, currFee, prevTimestamp, currTimestamp);
+        emit Update(id_, prevFee, _cdp.fee, prevTimestamp, block.timestamp);
     }
 }
