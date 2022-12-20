@@ -21,7 +21,7 @@ module.exports = {
     hardhat: {
       forking: {
         enabled: true,
-        url: 'https://data-seed-prebsc-1-s3.binance.org:8545/',
+        url: 'https://rpc.ankr.com/polygon_mumbai',
         // blockNumber: 24243078,
         accounts: [
           process.env.PRIVATE_KEY_OWNER,
@@ -44,6 +44,16 @@ module.exports = {
     },
     bscTestnet: {
       url: 'https://data-seed-prebsc-1-s3.binance.org:8545/',
+      accounts: [
+        process.env.PRIVATE_KEY_OWNER,
+        process.env.PRIVATE_KEY_BOT,
+        process.env.PRIVATE_KEY_FEE_TO,
+        process.env.PRIVATE_KEY_USER,
+        process.env.PRIVATE_KEY_USER_2
+      ],
+    },
+    mumbai: {
+      url: 'https://rpc.ankr.com/polygon_mumbai',
       accounts: [
         process.env.PRIVATE_KEY_OWNER,
         process.env.PRIVATE_KEY_BOT,
