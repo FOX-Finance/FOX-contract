@@ -1,8 +1,12 @@
+// require("hardhat-deploy")
+// require("hardhat-deploy-ethers")
+
 const fs = require('fs');
 
 const { signer, contract, set } = require('./set');
 
-async function deploy() {
+
+async function batchDeploy() {
     process.stdout.write("Deploy OracleFeeder");
     const OracleFeeder = await ethers.getContractFactory("OracleFeeder", signer.bot);
     contract.oracleFeeder = await OracleFeeder.deploy();
@@ -168,7 +172,7 @@ async function main() {
     await set();
 
     console.log("\n<Deploy>");
-    await deploy();
+    await batchDeploy();
 
     console.log("\n<Init>");
     await init();

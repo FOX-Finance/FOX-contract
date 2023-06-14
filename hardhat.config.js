@@ -2,6 +2,14 @@ require('dotenv').config();
 
 require("@nomicfoundation/hardhat-toolbox");
 
+accounts = [
+  process.env.PRIVATE_KEY_OWNER,
+  process.env.PRIVATE_KEY_BOT,
+  process.env.PRIVATE_KEY_FEE_TO,
+  process.env.PRIVATE_KEY_USER,
+  process.env.PRIVATE_KEY_USER_2
+];
+
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
@@ -16,51 +24,26 @@ module.exports = {
   paths: {
     sources: './contracts',
   },
-  defaultNetwork: 'localhost',
+  defaultNetwork: 'calibrationnet',
   networks: {
     hardhat: {
-      forking: {
-        enabled: true,
-        url: 'https://rpc.ankr.com/polygon_mumbai',
-        // blockNumber: 24243078,
-        accounts: [
-          process.env.PRIVATE_KEY_OWNER,
-          process.env.PRIVATE_KEY_BOT,
-          process.env.PRIVATE_KEY_FEE_TO,
-          process.env.PRIVATE_KEY_USER,
-          process.env.PRIVATE_KEY_USER_2
-        ],
-      },
+      // forking: {
+      //   enabled: true,
+      //   url: "https://api.calibration.node.glif.io/rpc/v1",
+      // },
     },
     localhost: {
       url: 'http://127.0.0.1:8545',
-      accounts: [
-        process.env.PRIVATE_KEY_OWNER,
-        process.env.PRIVATE_KEY_BOT,
-        process.env.PRIVATE_KEY_FEE_TO,
-        process.env.PRIVATE_KEY_USER,
-        process.env.PRIVATE_KEY_USER_2
-      ],
     },
-    bscTestnet: {
-      url: 'https://data-seed-prebsc-1-s3.binance.org:8545/',
-      accounts: [
-        process.env.PRIVATE_KEY_OWNER,
-        process.env.PRIVATE_KEY_BOT,
-        process.env.PRIVATE_KEY_FEE_TO,
-        process.env.PRIVATE_KEY_USER,
-        process.env.PRIVATE_KEY_USER_2
-      ],
+    calibrationnet: {
+      chainId: 314159,
+      url: "https://api.calibration.node.glif.io/rpc/v1",
+      accounts: accounts,
     },
-    mumbai: {
-      url: 'https://rpc.ankr.com/polygon_mumbai',
-      accounts: [
-        process.env.PRIVATE_KEY_OWNER,
-        process.env.PRIVATE_KEY_BOT,
-        process.env.PRIVATE_KEY_FEE_TO,
-        process.env.PRIVATE_KEY_USER,
-        process.env.PRIVATE_KEY_USER_2
-      ],
+    filecoinmainnet: {
+      chainId: 314,
+      url: "https://api.node.glif.io",
+      accounts: accounts,
     },
   },
 };

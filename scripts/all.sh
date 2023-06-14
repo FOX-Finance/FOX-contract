@@ -1,13 +1,13 @@
 # Set & Fuel
-dotenv -e .env.test -- npx hardhat run scripts/deploy.js --network localhost
-dotenv -e .env.test -- npx hardhat run scripts/fuel.js --network localhost
+dotenv -e .env.test -- npx hardhat run scripts/deploy.js
+dotenv -e .env.test -- npx hardhat run scripts/fuel.js
 
 # Mint
-dotenv -e .env.test -- npx hardhat run scripts/mint.js --network localhost
+dotenv -e .env.test -- npx hardhat run scripts/mint.js
 
 
 # # Redeem
-# dotenv -e .env.test -- npx hardhat run scripts/redeem.js --network localhost
+# dotenv -e .env.test -- npx hardhat run scripts/redeem.js
 
 
 # # Buyback
@@ -21,9 +21,9 @@ dotenv -e .env.test -- npx hardhat run scripts/mint.js --network localhost
 #         "Content-type: application/json"\
 #         --data '{"jsonrpc":"2.0","method":"hardhat_mine","params":["0x1"], "id": 1}' # mine one block
 #     echo ""
-#     dotenv -e .env.test -- npx hardhat run scripts/oracleUp.js --network localhost # set FOX price
+#     dotenv -e .env.test -- npx hardhat run scripts/oracleUp.js # set FOX price
 # done
-# dotenv -e .env.test -- npx hardhat run scripts/buyback.js --network localhost
+# dotenv -e .env.test -- npx hardhat run scripts/buyback.js
 
 
 # # Recoll
@@ -37,9 +37,9 @@ dotenv -e .env.test -- npx hardhat run scripts/mint.js --network localhost
 #         "Content-type: application/json"\
 #         --data '{"jsonrpc":"2.0","method":"hardhat_mine","params":["0x1"], "id": 1}' # mine one block
 #     echo ""
-#     dotenv -e .env.test -- npx hardhat run scripts/oracleDown.js --network localhost # set FOX price
+#     dotenv -e .env.test -- npx hardhat run scripts/oracleDown.js # set FOX price
 # done
-# dotenv -e .env.test -- npx hardhat run scripts/recoll.js --network localhost
+# dotenv -e .env.test -- npx hardhat run scripts/recoll.js
 
 
 # Coupon
@@ -53,6 +53,6 @@ do
         "Content-type: application/json"\
         --data '{"jsonrpc":"2.0","method":"hardhat_mine","params":["0x1"], "id": 1}' # mine one block
     echo ""
-    dotenv -e .env.test -- npx hardhat run scripts/oracleUp.js --network localhost # set FOX price
+    dotenv -e .env.test -- npx hardhat run scripts/oracleUp.js # set FOX price
 done
-dotenv -e .env.test -- npx hardhat run scripts/coupon.js --network localhost
+dotenv -e .env.test -- npx hardhat run scripts/coupon.js
