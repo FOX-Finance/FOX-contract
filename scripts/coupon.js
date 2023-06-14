@@ -167,18 +167,18 @@ async function main() {
         cid
     );
 
-    // // Coupon
-    // console.log("\n<Before: Balances>");
-    // await balances();
+    // Coupon
+    console.log("\n<Before: Balances>");
+    await balances();
 
-    // console.log("\n<Coupon>");
-    // await buybackCoupon(
-    //     signer.user.address,
-    //     shareAmount
-    // );
+    console.log("\n<Coupon>");
+    await buybackCoupon(
+        signer.user.address,
+        shareAmount
+    );
 
-    // console.log("\n<After: Balances>");
-    // await balances();
+    console.log("\n<After: Balances>");
+    await balances();
 
     const pid = BigInt(0);
 

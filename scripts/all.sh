@@ -5,8 +5,10 @@ dotenv -e .env.test -- npx hardhat run scripts/fuel.js --network localhost
 # Mint
 dotenv -e .env.test -- npx hardhat run scripts/mint.js --network localhost
 
+
 # # Redeem
 # dotenv -e .env.test -- npx hardhat run scripts/redeem.js --network localhost
+
 
 # # Buyback
 # for ((i=0;i<10;i++))
@@ -23,6 +25,7 @@ dotenv -e .env.test -- npx hardhat run scripts/mint.js --network localhost
 # done
 # dotenv -e .env.test -- npx hardhat run scripts/buyback.js --network localhost
 
+
 # # Recoll
 # for ((i=0;i<10;i++))
 # do
@@ -37,6 +40,7 @@ dotenv -e .env.test -- npx hardhat run scripts/mint.js --network localhost
 #     dotenv -e .env.test -- npx hardhat run scripts/oracleDown.js --network localhost # set FOX price
 # done
 # dotenv -e .env.test -- npx hardhat run scripts/recoll.js --network localhost
+
 
 # Coupon
 for ((i=0;i<10;i++))
