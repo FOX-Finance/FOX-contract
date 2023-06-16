@@ -2,7 +2,8 @@
 
 pragma solidity 0.8.9;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+// import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
@@ -21,7 +22,7 @@ import "../interfaces/ICDP.sol";
  * @notice Gets WETH as collateral, gives SIN as debt.
  * @dev Abstract contract.
  */
-abstract contract CDP is ICDP, ERC721, Pausable, Ownable, Oracle {
+abstract contract CDP is ICDP, ERC721Enumerable, Pausable, Ownable, Oracle {
     using SafeERC20 for IERC20;
 
     //============ Params ============//

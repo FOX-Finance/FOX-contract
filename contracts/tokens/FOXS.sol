@@ -46,6 +46,11 @@ contract FOXS is IFOXS, ERC20Capped, Ownable {
 
     //============ ERC20-related Functions ============//
 
+    // TODO: test-purpose only
+    function mint(address account, uint256 amount) external {
+        _mint(account, amount);
+    }
+
     function mintTo(address account, uint256 amount) external onlyOwner {
         _mint(account, amount);
     }
@@ -101,11 +106,10 @@ contract FOXS is IFOXS, ERC20Capped, Ownable {
     /// @param pid_ The index of the pool. See `poolInfo`.
     /// @param user_ Address of user.
     /// @return pending Token reward for a given user.
-    function pendingToken(uint256 pid_, address user_)
-        public
-        view
-        returns (uint256 pending)
-    {
+    function pendingToken(
+        uint256 pid_,
+        address user_
+    ) public view returns (uint256 pending) {
         PoolInfo memory pool = poolInfo[pid_];
         UserInfo storage user = userInfo[pid_][user_];
         uint256 accTokenPerShare = pool.accTokenPerShare;
@@ -157,11 +161,7 @@ contract FOXS is IFOXS, ERC20Capped, Ownable {
     /// @param pid_ The index of the pool. See `poolInfo`.
     /// @param amount_ Token amount to deposit.
     /// @param to_ The receiver of `amount` deposit benefit.
-    function deposit(
-        uint256 pid_,
-        uint256 amount_,
-        address to_
-    ) public {
+    function deposit(uint256 pid_, uint256 amount_, address to_) public {
         PoolInfo memory pool = update(pid_);
 
         address msgSender = _msgSender();
@@ -181,11 +181,7 @@ contract FOXS is IFOXS, ERC20Capped, Ownable {
     /// @param pid_ The index of the pool. See `poolInfo`.
     /// @param amount_ Token amount to withdraw.
     /// @param to_ Receiver of the tokens.
-    function withdraw(
-        uint256 pid_,
-        uint256 amount_,
-        address to_
-    ) public {
+    function withdraw(uint256 pid_, uint256 amount_, address to_) public {
         PoolInfo memory pool = update(pid_);
 
         address msgSender = _msgSender();

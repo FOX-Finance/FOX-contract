@@ -2,7 +2,8 @@
 
 pragma solidity 0.8.9;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+// import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
@@ -21,13 +22,7 @@ import "../interfaces/ICoupon.sol";
  * @author Luke Park (lukepark327@gmail.com)
  * @notice Gets FOXS as share, mints NIS as grant.
  */
-contract Coupon is
-    ICoupon,
-    ERC721("FoxFarm PDC", "PDC"),
-    Pausable,
-    Ownable,
-    Nonzero
-{
+contract Coupon is ICoupon, ERC721Enumerable, Pausable, Ownable, Nonzero {
     using SafeERC20 for IERC20;
 
     //============ Params ============//
@@ -63,7 +58,7 @@ contract Coupon is
         address feeTo_,
         address grantToken_, // NIS
         uint256 feeRatio_
-    ) nonzeroAddress(grantToken_) {
+    ) ERC721("FoxFarm PDC", "PDC") nonzeroAddress(grantToken_) {
         _feeTo = feeTo_; // can be zero address
         _grantToken = IERC20(grantToken_);
         _feeRatio = feeRatio_;
