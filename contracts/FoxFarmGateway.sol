@@ -245,6 +245,8 @@ contract FoxFarmGateway is IFoxFarmGateway {
         )
     {
         stableAmount_ = IERC20(address(_stableToken)).balanceOf(account_);
+        (uint256 upperBound_, ) = stableAmountRangeWhenRedeem(account_, id_);
+        stableAmount_ = min(stableAmount_, upperBound_);
 
         ltv_ = _foxFarm.currentLTV(id_);
 
